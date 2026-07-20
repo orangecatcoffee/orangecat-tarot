@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- deploy trigger: confirmed correct repo connection -->
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -89,8 +88,9 @@
      spotlight moment for the card reveal, still built from the brand's brown, not black */
   .overlay{
     position:fixed;inset:0; background:rgba(46,27,13,0.92); backdrop-filter:blur(3px);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    z-index:50; opacity:0;pointer-events:none; transition:opacity .35s ease; padding:20px;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    z-index:50; opacity:0;pointer-events:none; transition:opacity .35s ease;
+    padding:56px 20px 40px; overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
   .overlay.show{ opacity:1; pointer-events:auto; }
   .stagehint{ font-size:11px;letter-spacing:1.5px;color:rgba(247,237,224,0.65); margin-bottom:16px;text-align:center;min-height:14px; }
