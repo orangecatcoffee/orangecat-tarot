@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>กาแฟแมวส้ม — สุ่มไพ่ทาโร่</title>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --cream:#F7EDE0;
+    --cream-soft:#FBF5EB;
+    --brown:#5A361B;
+    --brown-dim:rgba(90,54,27,0.6);
+    --brown-faint:rgba(90,54,27,0.35);
+    --orange:#E8621A;
+    --gold:#C9A44A;
+    --reveal-dark:#2E1B0D;
+    --card-w: min(78vw, 300px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232,98,26,0.08), transparent 60%),
+      radial-gradient(ellipse 90% 50% at 50% 110%, rgba(201,164,74,0.10), transparent 60%),
+      var(--cream);
+    font-family:'Mitr',sans-serif;
+    color:var(--brown);
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    padding-bottom:40px;
+  }
+
+  .demo-banner{
+    width:100%; background:rgba(232,98,26,0.10);
+    border-bottom:1px solid rgba(232,98,26,0.3); color:#A84A14;
+    font-size:11px; text-align:center; padding:8px 16px; letter-spacing:0.3px; display:none;
+  }
+  .demo-banner.show{ display:block; }
+
+  .top{ width:100%; text-align:center; padding:36px 20px 18px; }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:10px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--orange);border:1px solid rgba(232,98,26,0.35);
+    padding:5px 16px;border-radius:999px;margin-bottom:16px;
+  }
+  h1{
+    font-family:'Playfair Display',serif; font-weight:700;
+    font-size:clamp(24px,6vw,34px); color:var(--brown); letter-spacing:0.5px;
+  }
+  .sub{
+    font-size:13px;font-weight:300;color:var(--brown-dim);
+    margin-top:10px;line-height:1.7;max-width:340px;margin-left:auto;margin-right:auto;
+  }
+
+  .stage{ width:100%; max-width:520px; padding:10px 16px 8px; position:relative; }
+  .fan{ display:flex; justify-content:center; flex-wrap:wrap; gap:14px 10px; padding:24px 0 8px; }
+
+  .mini{
+    width:74px; height:118px; border-radius:10px; position:relative;
+    cursor:pointer; transition:transform .25s ease; flex:0 0 auto;
+  }
+  .mini:active{ transform:scale(0.94); }
+  .mini.gone{ opacity:0; transform:translateY(-14px) scale(0.8); pointer-events:none; }
+  .mini-face{
+    position:absolute;inset:0;border-radius:10px;
+    background:
+      repeating-linear-gradient(135deg, rgba(232,98,26,0.14) 0 8px, transparent 8px 16px),
+      linear-gradient(160deg,#3D2510,#241505);
+    border:1.5px solid rgba(201,164,74,0.55);
+    box-shadow:0 6px 14px rgba(0,0,0,0.45);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mini-face::before{ content:'🐾'; font-size:20px; opacity:0.55; filter:sepia(1) saturate(2) hue-rotate(-10deg); }
+  .mini-face.picked{ border-color:var(--orange); box-shadow:0 0 0 2px rgba(232,98,26,0.5), 0 8px 18px rgba(0,0,0,0.5); }
+
+  .hint{ text-align:center; font-size:11.5px; color:var(--brown-dim); letter-spacing:0.5px; padding:6px 0 4px; }
+  .hint b{ color:var(--orange); font-weight:500; }
+  .counter{ text-align:center; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--brown-faint); padding-top:2px; }
+
+  /* the reveal overlay stays deliberately darker/warmer than the page — a little
+     spotlight moment for the card reveal, still built from the brand's brown, not black */
+  .overlay{
+    position:fixed;inset:0; background:rgba(46,27,13,0.92); backdrop-filter:blur(3px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:50; opacity:0;pointer-events:none; transition:opacity .35s ease; padding:20px;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .stagehint{ font-size:11px;letter-spacing:1.5px;color:rgba(247,237,224,0.65); margin-bottom:16px;text-align:center;min-height:14px; }
+
+  .flipcard{ width:var(--card-w); aspect-ratio:0.734; perspective:1600px; cursor:pointer; }
+  .flipcard-inner{ position:relative;width:100%;height:100%; transition:transform .7s cubic-bezier(.4,.2,.2,1); transform-style:preserve-3d; }
+  .flipcard.flipped .flipcard-inner{ transform:rotateY(180deg); }
+  .flipface{
+    position:absolute;inset:0; backface-visibility:hidden; border-radius:16px; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,164,74,0.35); background:var(--cream);
+  }
+  .flipface img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .flipface.back{ transform:rotateY(180deg); }
+
+  .drawn-name{ text-align:center;margin-top:18px; }
+  .drawn-name .num{ font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase; }
+  .drawn-name .name{ font-family:'Playfair Display',serif;font-weight:700; font-size:22px;color:var(--cream);margin-top:4px; }
+  .drawn-name .drink{ font-size:12.5px;color:var(--orange);margin-top:4px;font-weight:400; }
+  .drawn-name .already{ font-size:10.5px;color:rgba(247,237,224,0.65);margin-top:6px; }
+
+  .cta-row{
+    margin-top:20px; display:flex;gap:10px; flex-wrap:wrap; justify-content:center;
+    opacity:0;transform:translateY(6px);
+    transition:opacity .4s ease .1s, transform .4s ease .1s; pointer-events:none;
+  }
+  .cta-row.show{ opacity:1;transform:translateY(0);pointer-events:auto; }
+
+  .btn{
+    font-family:'Mitr',sans-serif; font-size:13px;font-weight:500; padding:12px 22px;
+    border-radius:999px; border:none; cursor:pointer; text-decoration:none;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn-primary{ background:linear-gradient(135deg,var(--orange),#F5916A); color:#241505; }
+  .btn-primary:disabled{ opacity:0.55; cursor:not-allowed; }
+  .btn-ghost{ background:transparent; border:1px solid rgba(247,237,224,0.3); color:rgba(247,237,224,0.75); }
+  .btn-success{ background:linear-gradient(135deg,#8FBC8F,#3A6B4A); color:#0d1a0d; }
+
+  .order-status{ margin-top:14px; font-size:11.5px; color:rgba(247,237,224,0.65); text-align:center; min-height:16px; }
+  .order-status.err{ color:#E88080; }
+  .order-status.ok{ color:#8FBC8F; }
+
+  .confirm-panel{
+    display:none; width:100%; max-width:320px; margin-top:16px;
+    background:rgba(247,237,224,0.06); border:1px solid rgba(201,164,74,0.3);
+    border-radius:16px; padding:16px; text-align:center;
+  }
+  .confirm-panel.show{ display:block; }
+  .confirm-summary{
+    font-size:12.5px; color:rgba(247,237,224,0.85); margin-bottom:10px; line-height:1.6;
+  }
+  .confirm-summary b{ color:var(--gold); font-weight:500; }
+  .notes-input{
+    width:100%; font-family:'Mitr',sans-serif; font-size:12.5px;
+    background:rgba(247,237,224,0.08); border:1px solid rgba(247,237,224,0.25);
+    border-radius:10px; padding:10px 12px; color:var(--cream);
+    resize:none; outline:none; margin-bottom:12px;
+  }
+  .notes-input::placeholder{ color:rgba(247,237,224,0.4); }
+  .notes-input:focus{ border-color:var(--orange); }
+  .confirm-btn-row{ display:flex; gap:8px; justify-content:center; }
+
+  .field-label-mini{
+    display:block; font-size:10.5px; color:rgba(247,237,224,0.55);
+    text-align:left; margin-bottom:6px; letter-spacing:0.3px;
+  }
+  .date-input{
+    width:100%; font-family:'Mitr',sans-serif; font-size:12.5px;
+    background:rgba(247,237,224,0.08); border:1px solid rgba(247,237,224,0.25);
+    border-radius:10px; padding:9px 12px; color:var(--cream);
+    outline:none; margin-bottom:12px; color-scheme:dark;
+  }
+  .date-input:focus{ border-color:var(--orange); }
+  .sweetness-row{ display:flex; gap:6px; margin-bottom:12px; }
+  .sweetness-btn{
+    flex:1; font-family:'Mitr',sans-serif; font-size:11.5px;
+    background:rgba(247,237,224,0.06); border:1px solid rgba(247,237,224,0.2);
+    color:rgba(247,237,224,0.75); border-radius:999px; padding:8px 4px; cursor:pointer;
+  }
+  .sweetness-btn.selected{
+    background:rgba(232,98,26,0.25); border-color:var(--orange); color:var(--cream); font-weight:500;
+  }
+
+  .close-x{
+    position:absolute;top:18px;right:18px; width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--cream);
+    font-size:16px; display:flex;align-items:center;justify-content:center; cursor:pointer;
+  }
+
+  .foot{ text-align:center;font-size:10px;letter-spacing:2px; text-transform:uppercase;color:var(--brown-faint); margin-top:22px; }
+  .foot.on-dark{ color:rgba(247,237,224,0.3); }
+
+  @media (prefers-reduced-motion: reduce){
+    .flipcard-inner, .mini, .mini.gone, .cta-row{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner" id="demoBanner">⚠️ ยังไม่ได้ผูก LIFF ID จริง — โหมดนี้ดูไพ่ได้ แต่ยังสั่งเมนู/เก็บสมุดสะสมไม่ได้จริง</div>
+
+<div class="top">
+  <div class="eyebrow">🐱 กาแฟแมวส้ม</div>
+  <h1>สุ่มไพ่ทาโร่ประจำวัน</h1>
+  <p class="sub">แตะไพ่ที่ใจเลือก 1 ใบจากกอง<br>แล้วให้อาบุ้งงงทำนายเครื่องดื่มของวันนี้ให้คุณ</p>
+</div>
+
+<div class="stage">
+  <div class="fan" id="fan"></div>
+  <div class="hint">แตะไพ่ <b>1 ใบ</b> ที่รู้สึกว่าใช่ที่สุด</div>
+  <div class="counter" id="counter">12 ใบเหลืออยู่</div>
+</div>
+
+<a href="collection.html" style="display:inline-block;margin-top:6px;font-size:11.5px;color:var(--orange);text-decoration:none;border:1px solid rgba(232,98,26,0.35);padding:8px 18px;border-radius:999px;">📖 สมุดสะสมของฉัน</a>
+<div class="foot">กาแฟแมวส้ม · Tarot Draw · build 2026-07-19-G (date+sweetness+beans)</div>
+
+<div class="overlay" id="overlay">
+  <div class="close-x" id="closeBtn">✕</div>
+  <div class="stagehint" id="stageHint">แตะไพ่เพื่อเปิด</div>
+
+  <div class="flipcard" id="flipcard">
+    <div class="flipcard-inner">
+      <div class="flipface front"><img id="frontImg" src="" alt=""></div>
+      <div class="flipface back"><img id="backImg" src="" alt=""></div>
+    </div>
+  </div>
+
+  <div class="drawn-name" id="drawnName" style="opacity:0;transition:opacity .4s ease .3s;">
+    <div class="num" id="dNum"></div>
+    <div class="name" id="dName"></div>
+    <div class="drink" id="dDrink"></div>
+    <div class="already" id="dAlready" style="display:none;">✨ ใบนี้อยู่ในสมุดสะสมของคุณแล้ว</div>
+  </div>
+
+  <div class="cta-row" id="ctaRow">
+    <button class="btn btn-primary" id="orderBtn">สั่งเมนูนี้</button>
+    <button class="btn btn-ghost" id="drawAgainBtn">จั่วใหม่</button>
+  </div>
+
+  <div class="confirm-panel" id="confirmPanel">
+    <div class="confirm-summary" id="confirmSummary"></div>
+
+    <label class="field-label-mini">วันที่ต้องการรับ</label>
+    <input type="date" class="date-input" id="dateInput">
+
+    <label class="field-label-mini">ความหวาน</label>
+    <div class="sweetness-row" id="sweetnessRow">
+      <button type="button" class="sweetness-btn" data-val="ไม่หวาน">ไม่หวาน</button>
+      <button type="button" class="sweetness-btn" data-val="หวานน้อย">หวานน้อย</button>
+      <button type="button" class="sweetness-btn selected" data-val="หวานปกติ">หวานปกติ</button>
+    </div>
+
+    <label class="field-label-mini">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
+    <textarea class="notes-input" id="notesInput" placeholder="เช่น ขอแก้วเย็นน้อย" maxlength="200" rows="2"></textarea>
+    <div class="confirm-btn-row">
+      <button class="btn btn-primary" id="confirmOrderBtn">ยืนยันการสั่ง</button>
+      <button class="btn btn-ghost" id="cancelConfirmBtn">ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="order-status" id="orderStatus"></div>
+</div>
+
+<script>
+const CARDS = [{"slug": "justice", "num": "I", "name": "Justice", "drink_display": "Iced Americano", "drink_db": "Iced Americano"}, {"slug": "priestess", "num": "II", "name": "The Priestess", "drink_display": "Coconut Matcha", "drink_db": "Coconut Matcha"}, {"slug": "empress", "num": "III", "name": "The Empress", "drink_display": "Oat Matcha", "drink_db": "Oat Matcha"}, {"slug": "lovers", "num": "VI", "name": "The Lovers", "drink_display": "Iced Latte", "drink_db": "Iced Latte"}, {"slug": "hermit", "num": "IX", "name": "The Hermit", "drink_display": "Pure Matcha", "drink_db": "Pure Matcha"}, {"slug": "wheel", "num": "X", "name": "Wheel of Fortune", "drink_display": "Thai Tea", "drink_db": "Thai Tea"}, {"slug": "strength", "num": "XI", "name": "Strength", "drink_display": "Cocoa", "drink_db": "Cocoa"}, {"slug": "temperance", "num": "XIV", "name": "Temperance", "drink_display": "Matcha Latte", "drink_db": "Matcha Latte"}, {"slug": "star", "num": "XVII", "name": "The Star", "drink_display": "Oat Latte", "drink_db": "Oat Latte"}, {"slug": "moon", "num": "XVIII", "name": "The Moon", "drink_display": "Dirty Coffee", "drink_db": "Dirty"}, {"slug": "sun", "num": "XIX", "name": "The Sun", "drink_display": "Orange Americano", "drink_db": "Orange Americano"}, {"slug": "world", "num": "XXI", "name": "The World", "drink_display": "Coconut Latte", "drink_db": "Coconut Latte"}];
+
+/* ===== ตั้งค่าที่ต้องผูกจริง ===== */
+const LIFF_ID = "2010600301-c8P7aaPn"; // <-- ใส่ LIFF ID จริงตรงนี้เมื่อสร้างเสร็จ
+const SUPABASE_URL = "https://nhzjnutvirjgiclkkfgx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oempudXR2aXJqZ2ljbGtrZmd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjc3NjEsImV4cCI6MjA5ODcwMzc2MX0.Bv2zsjmo3yd9YpmfxUAmXf-aaFy7SbY77fmM_k4f7eg";
+const TX_CHANNEL = "liff-tarot";
+/* ================================= */
+
+const DEMO_MODE = false; // LIFF ID confirmed set — always live now
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let deck = [], currentCard = null, stage = 0;
+let liffProfile = null;
+let ordering = false;
+let selectedSweetness = 'หวานปกติ';
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+const fan = document.getElementById('fan');
+const overlay = document.getElementById('overlay');
+const flipcard = document.getElementById('flipcard');
+const frontImg = document.getElementById('frontImg');
+const backImg = document.getElementById('backImg');
+const drawnName = document.getElementById('drawnName');
+const dNum = document.getElementById('dNum');
+const dName = document.getElementById('dName');
+const dDrink = document.getElementById('dDrink');
+const dAlready = document.getElementById('dAlready');
+const ctaRow = document.getElementById('ctaRow');
+const orderBtn = document.getElementById('orderBtn');
+const confirmPanel = document.getElementById('confirmPanel');
+const confirmSummary = document.getElementById('confirmSummary');
+const dateInput = document.getElementById('dateInput');
+const sweetnessRow = document.getElementById('sweetnessRow');
+
+sweetnessRow.addEventListener('click', (e) => {
+  const btn = e.target.closest('.sweetness-btn');
+  if (!btn) return;
+  selectedSweetness = btn.dataset.val;
+  sweetnessRow.querySelectorAll('.sweetness-btn').forEach(b => b.classList.toggle('selected', b === btn));
+});
+const notesInput = document.getElementById('notesInput');
+const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+const stageHint = document.getElementById('stageHint');
+const counter = document.getElementById('counter');
+const orderStatus = document.getElementById('orderStatus');
+const demoBanner = document.getElementById('demoBanner');
+
+if (DEMO_MODE) demoBanner.classList.add('show');
+
+async function initLiff(){
+  if (DEMO_MODE) return;
+  try{
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()){
+      liff.login();
+      return;
+    }
+    liffProfile = await liff.getProfile();
+  }catch(e){
+    console.error('LIFF init failed', e);
+    orderStatus.textContent = 'เชื่อมต่อ LINE ไม่สำเร็จ ลองเปิดใหม่อีกครั้ง';
+    orderStatus.className = 'order-status err';
+  }
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildDeck(){
+  fan.innerHTML = '';
+  deck = shuffle(CARDS);
+  deck.forEach((card, idx) => {
+    const mini = document.createElement('div');
+    mini.className = 'mini';
+    const face = document.createElement('div');
+    face.className = 'mini-face';
+    mini.appendChild(face);
+    mini.addEventListener('click', () => pick(idx, mini));
+    fan.appendChild(mini);
+  });
+  counter.textContent = deck.length + ' ใบเหลืออยู่';
+}
+
+async function pick(idx, mini){
+  currentCard = deck[idx];
+  mini.querySelector('.mini-face').classList.add('picked');
+
+  frontImg.src = 'images/front_' + currentCard.slug + '.jpg';
+  backImg.src = 'images/back_' + currentCard.slug + '.jpg';
+  dNum.textContent = 'Card ' + currentCard.num;
+  dName.textContent = currentCard.name;
+  dDrink.textContent = currentCard.drink_display;
+  dAlready.style.display = 'none';
+  orderStatus.textContent = '';
+  orderStatus.className = 'order-status';
+  orderBtn.disabled = false;
+  orderBtn.textContent = 'สั่งเมนูนี้';
+  orderBtn.className = 'btn btn-primary';
+  confirmPanel.classList.remove('show');
+  notesInput.value = '';
+  selectedSweetness = 'หวานปกติ';
+  sweetnessRow.querySelectorAll('.sweetness-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.val === selectedSweetness);
+  });
+  dateInput.value = todayStr();
+  dateInput.min = todayStr();
+
+  flipcard.classList.remove('flipped');
+  drawnName.style.opacity = 0;
+  ctaRow.classList.remove('show');
+  stage = 1;
+  stageHint.textContent = 'แตะไพ่เพื่อเปิดเผยคำทำนาย';
+  overlay.classList.add('show');
+
+  setTimeout(() => { mini.classList.add('gone'); }, 250);
+  setTimeout(() => {
+    const remaining = document.querySelectorAll('.mini:not(.gone)').length;
+    counter.textContent = remaining + ' ใบเหลืออยู่';
+  }, 260);
+
+  if (!DEMO_MODE && liffProfile){
+    try{
+      const { data } = await sb.from('customer_card_collection')
+        .select('id')
+        .eq('line_user_id', liffProfile.userId)
+        .eq('theme', 'tarot')
+        .eq('card_name', currentCard.name)
+        .maybeSingle();
+      if (data) dAlready.style.display = 'block';
+    }catch(e){ /* non-fatal */ }
+  }
+}
+
+flipcard.addEventListener('click', () => {
+  if(stage === 1){
+    flipcard.classList.add('flipped');
+    stage = 2;
+    stageHint.textContent = '';
+    setTimeout(() => {
+      drawnName.style.opacity = 1;
+      ctaRow.classList.add('show');
+    }, 380);
+  }
+});
+
+orderBtn.addEventListener('click', () => {
+  if (DEMO_MODE){
+    orderStatus.textContent = 'โหมดทดสอบ — ยังไม่ได้ผูก LIFF ID จริง จึงยังสั่งจริงไม่ได้';
+    orderStatus.className = 'order-status err';
+    return;
+  }
+  if (!liffProfile){
+    orderStatus.textContent = 'ยังเชื่อมต่อ LINE ไม่สำเร็จ ลองปิดแล้วเปิดหน้านี้ใหม่';
+    orderStatus.className = 'order-status err';
+    return;
+  }
+
+  confirmSummary.innerHTML = 'ยืนยันสั่ง <b>' + currentCard.drink_display + '</b> (ไพ่ ' + currentCard.name + ') ใช่ไหม?';
+  ctaRow.classList.remove('show');
+  confirmPanel.classList.add('show');
+  notesInput.focus();
+});
+
+cancelConfirmBtn.addEventListener('click', () => {
+  confirmPanel.classList.remove('show');
+  ctaRow.classList.add('show');
+});
+
+confirmOrderBtn.addEventListener('click', async () => {
+  if (ordering) return;
+
+  ordering = true;
+  confirmOrderBtn.disabled = true;
+  confirmOrderBtn.textContent = 'กำลังส่งคำสั่ง...';
+  orderStatus.textContent = '';
+  orderStatus.className = 'order-status';
+
+  const notes = notesInput.value.trim();
+  const wantedDate = dateInput.value || todayStr();
+
+  try{
+    const { data: menuItem, error: menuErr } = await sb
+      .from('menu_items')
+      .select('id, price')
+      .eq('name', currentCard.drink_db)
+      .single();
+    if (menuErr || !menuItem) throw new Error('หาเมนูในระบบไม่เจอ: ' + currentCard.drink_db);
+
+    const { error: txErr } = await sb.from('transactions').insert({
+      menu_item_id: menuItem.id,
+      quantity: 1,
+      total_price: menuItem.price,
+      channel: TX_CHANNEL,
+      customer_name: liffProfile.displayName,
+      status: 'pending',
+      notes: notes || null,
+      wanted_date: wantedDate,
+      sweetness: selectedSweetness
+    });
+    if (txErr) throw txErr;
+
+    await sb.from('customer_theme_history').insert({
+      line_user_id: liffProfile.userId,
+      theme: 'tarot',
+      result_menu_item: currentCard.drink_db,
+      result_label: currentCard.name
+    });
+
+    const { error: collectErr } = await sb.from('customer_card_collection').insert({
+      line_user_id: liffProfile.userId,
+      card_name: currentCard.name,
+      menu_item_name: currentCard.drink_db,
+      theme: 'tarot'
+    });
+    if (collectErr && collectErr.code !== '23505') throw collectErr;
+
+    // push a confirmation message back into the customer's own LINE chat
+    try{
+      await fetch(SUPABASE_URL + '/functions/v1/notify-customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          line_user_id: liffProfile.userId,
+          card_name: currentCard.name,
+          drink_name: currentCard.drink_display,
+          notes: notes
+        })
+      });
+    }catch(pushErr){ console.error('customer push failed (non-fatal)', pushErr); }
+
+    confirmPanel.classList.remove('show');
+    orderBtn.textContent = 'สั่งแล้ว ✓';
+    orderBtn.className = 'btn btn-success';
+    ctaRow.classList.add('show');
+    orderStatus.textContent = '🎉 ส่งคำสั่งซื้อแล้ว! เช็คแชท LINE ของคุณ จะมีข้อความยืนยันเข้ามา';
+    orderStatus.className = 'order-status ok';
+    dAlready.style.display = 'block';
+
+  }catch(e){
+    console.error(e);
+    orderStatus.textContent = 'สั่งไม่สำเร็จ ลองอีกครั้ง';
+    orderStatus.className = 'order-status err';
+  }finally{
+    ordering = false;
+    confirmOrderBtn.disabled = false;
+    confirmOrderBtn.textContent = 'ยืนยันการสั่ง';
+  }
+});
+
+document.getElementById('closeBtn').addEventListener('click', closeOverlay);
+document.getElementById('drawAgainBtn').addEventListener('click', () => {
+  closeOverlay();
+  setTimeout(buildDeck, 350);
+});
+
+function closeOverlay(){ overlay.classList.remove('show'); stage = 0; }
+
+buildDeck();
+initLiff();
+</script>
+
+</body>
+</html>
