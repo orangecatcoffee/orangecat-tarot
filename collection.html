@@ -108,6 +108,11 @@
     box-shadow:0 4px 10px rgba(90,54,27,0.4), inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -3px 6px rgba(0,0,0,0.3);
   }
 
+  /* แก้วเย็นสีตามเครื่องดื่มจริง — ใช้ทรงแก้วกลางๆ ไม่ใช่รูปเมนูจริง กันผูกกับ theme ใดธีมหนึ่ง */
+  .cup-icon{ width:38%;height:60%;display:flex;flex-direction:column;align-items:center; }
+  .cup-lid{ width:100%;height:16%;background:rgba(255,255,255,0.92);border-radius:2px 2px 0 0; }
+  .cup-body{ width:88%;height:84%;clip-path:polygon(8% 0,92% 0,80% 100%,20% 100%);border:1px solid rgba(0,0,0,0.12); }
+
   .lock-mark{
     width:100%;aspect-ratio:1;border-radius:50%;
     border:1.5px dashed rgba(90,54,27,0.28);
@@ -173,7 +178,7 @@
 </div>
 
 <div class="status" id="statusMsg" style="display:none;"></div>
-<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-F (permanent log + metallic medals)</div>
+<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-G (colored cup icons)</div>
 
 <script>
 const LIFF_ID = "2010600301-npcl3uPM";
@@ -231,6 +236,21 @@ function renderHistory(rows, menuImageMap){
   });
 }
 
+// สีของแก้วตามหมวดเมนูจริง (ไม่ใช่รูปเมนู แค่โทนสีของเครื่องดื่ม)
+const CATEGORY_COLOR = {
+  espresso: '#2b1a12',   // กาแฟดำ
+  dirty: '#2b1a12',
+  cocoa: '#4a2f1f',      // โกโก้น้ำตาลเข้ม
+  matcha: '#6B8E4E',     // เขียวมัทฉะ
+  thai_tea: '#E8862E',   // ส้มชาไทย
+  signature: '#E8621A',  // ส้มแบรนด์ (Orange Americano)
+  yogurt: '#F5F0E8',     // ขาวปีโป้
+};
+function cupIconHTML(category){
+  const color = CATEGORY_COLOR[category] || '#E8621A';
+  return `<div class="cup-icon"><div class="cup-lid"></div><div class="cup-body" style="background:${color}"></div></div>`;
+}
+
 function renderMenuSection(unlockedNames, menuItems){
   const grid = document.getElementById('menuGrid');
   grid.innerHTML = '';
@@ -241,8 +261,8 @@ function renderMenuSection(unlockedNames, menuItems){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="medal-circle menu">☕</div><div class="cell-label">${m.name}</div>`
-      : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
+      ? `<div class="medal-circle menu">${cupIconHTML(m.category)}</div><div class="cell-label">${m.name}</div>`
+      : `<div class="lock-mark">🔒</div><div class="cell-label locked">${m.name}</div>`;
     grid.appendChild(cell);
   });
   document.getElementById('menuCount').textContent = unlockedSet.size + '/' + menuItems.length;
@@ -288,7 +308,7 @@ function renderBeanSection(unlockedNames, beanUniverse){
 
 async function loadAll(lineUserId){
   const [menuRes, themeRes, beanUniverseRes, myCardsRes, historyRes] = await Promise.all([
-    sb.from('menu_items').select('name, image_url').order('name'),
+    sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
     sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
     sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
