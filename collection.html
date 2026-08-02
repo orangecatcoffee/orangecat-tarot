@@ -223,6 +223,7 @@ function renderHistory(rows, menuImageMap){
       : `<div class="history-thumb placeholder">☕</div>`;
     const tags = [];
     if (r.channel === 'liff-tarot') tags.push('<span class="history-tag">🎴 ไพ่ทาโร่</span>');
+    if (r.omakase_set_id) tags.push('<span class="history-tag" style="background:rgba(232,98,26,0.12);color:var(--orange,#E8621A);border-color:rgba(232,98,26,0.25);">✨ Omakase</span>');
     if (r.bean_name) tags.push(`<span class="history-tag bean">🌱 ${r.bean_name}</span>`);
     item.innerHTML = `
       ${thumb}
@@ -312,7 +313,7 @@ async function loadAll(lineUserId){
     sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
     sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
     sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
-    sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
+    sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
   ]);
 
   if (menuRes.error) throw menuRes.error;
