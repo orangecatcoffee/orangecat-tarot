@@ -89,17 +89,24 @@
   .grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:12px 9px; }
   .cell{ display:flex;flex-direction:column;align-items:center; }
 
-  /* เหรียญวงกลม — ใช้เหมือนกันทุกกลุ่ม (เมนู/Theme/เมล็ด) เขียนแค่ชื่อ ไม่ใช้รูปเลย
-     กันไม่ให้ไปหยิบรูปที่ผูกกับ theme ใดธีมหนึ่งมาใช้ในหน้าเหรียญสะสม */
+  /* เหรียญวงกลม — โทนโลหะทองแบบ Apple Watch: ไอคอนอย่างเดียวบนเหรียญ ชื่อแยกเป็น caption ข้างล่าง (อ่านง่ายกว่าเขียนทับบนเหรียญ) */
   .medal-circle{
     width:100%;aspect-ratio:1;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;text-align:center;
-    padding:8px; font-family:'Mitr',sans-serif;font-weight:500;font-size:10px;line-height:1.25;
-    color:#FFF9EC;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
   }
-  .medal-circle.menu{ background:radial-gradient(circle at 35% 30%, #F5A86A, var(--orange) 60%, #A84A14); box-shadow:0 4px 10px rgba(232,98,26,0.35); }
-  .medal-circle.theme{ background:radial-gradient(circle at 35% 30%, #E8D080, var(--gold) 55%, #8a6a2e); box-shadow:0 4px 10px rgba(201,164,74,0.4); }
-  .medal-circle.bean{ background:radial-gradient(circle at 35% 30%, #8a6142, #3D2510 65%); box-shadow:0 4px 10px rgba(90,54,27,0.3); }
+  .medal-circle.menu{
+    background:radial-gradient(circle at 32% 28%, #FFE0C0, #E8621A 45%, #A84A14 85%);
+    box-shadow:0 4px 10px rgba(232,98,26,0.4), inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.25);
+  }
+  .medal-circle.theme{
+    background:radial-gradient(circle at 32% 28%, #FFF2C0, #C9A44A 45%, #7a5c26 85%);
+    box-shadow:0 4px 10px rgba(201,164,74,0.45), inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.25);
+  }
+  .medal-circle.bean{
+    background:radial-gradient(circle at 32% 28%, #C9A48A, #6B4226 45%, #3D2510 85%);
+    box-shadow:0 4px 10px rgba(90,54,27,0.4), inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -3px 6px rgba(0,0,0,0.3);
+  }
 
   .lock-mark{
     width:100%;aspect-ratio:1;border-radius:50%;
@@ -166,7 +173,7 @@
 </div>
 
 <div class="status" id="statusMsg" style="display:none;"></div>
-<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-E (circle medals, no photos)</div>
+<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-F (permanent log + metallic medals)</div>
 
 <script>
 const LIFF_ID = "2010600301-npcl3uPM";
@@ -216,7 +223,7 @@ function renderHistory(rows, menuImageMap){
       ${thumb}
       <div class="history-body">
         <div class="history-name">${r.menu_item_name}</div>
-        <div class="history-date">${fmtDate(r.created_at)}</div>
+        <div class="history-date">${fmtDate(r.order_created_at)}</div>
         ${tags.length ? `<div class="history-tags">${tags.join('')}</div>` : ''}
       </div>
     `;
@@ -234,7 +241,7 @@ function renderMenuSection(unlockedNames, menuItems){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="medal-circle menu">${m.name}</div>`
+      ? `<div class="medal-circle menu">☕</div><div class="cell-label">${m.name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
     grid.appendChild(cell);
   });
@@ -253,7 +260,7 @@ function renderThemeSection(unlockedNames, themePeriods){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="medal-circle theme">${t.title}</div><div class="cell-label">${dateRange}</div>`
+      ? `<div class="medal-circle theme">🎮</div><div class="cell-label">${t.title}<br>${dateRange}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">${t.title}<br>${dateRange}</div>`;
     grid.appendChild(cell);
   });
@@ -271,7 +278,7 @@ function renderBeanSection(unlockedNames, beanUniverse){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="medal-circle bean">${name}</div>`
+      ? `<div class="medal-circle bean">🌱</div><div class="cell-label">${name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
     grid.appendChild(cell);
   });
@@ -285,7 +292,7 @@ async function loadAll(lineUserId){
     sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
     sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
     sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
-    sb.from('preorders').select('menu_item_name, created_at, channel, bean_name').eq('line_user_id', lineUserId).order('created_at', { ascending: false }),
+    sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
   ]);
 
   if (menuRes.error) throw menuRes.error;
