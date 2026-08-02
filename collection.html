@@ -92,6 +92,14 @@
   .sticker.dragging{ cursor:grabbing; box-shadow:0 14px 30px rgba(90,54,27,0.4), 0 0 0 3px var(--gold); }
   .sticker img{ width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none; }
 
+  .sticker.bean-card{
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:8px; background:linear-gradient(160deg, #6B4226, #3D2510);
+    color:#F7EDE0; font-family:'Playfair Display',serif; font-weight:700;
+    font-size:12px; line-height:1.35;
+  }
+  .sticker.bean-card .bean-emoji{ font-size:20px; display:block; margin-bottom:4px; }
+
   .empty-pile{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:8px;color:var(--brown-dim);font-size:12px;text-align:center;
@@ -155,6 +163,7 @@
 <div class="tabs">
   <button class="tab-btn active" id="tabTarot" data-theme="tarot">🃏 ไพ่ทาโร่</button>
   <button class="tab-btn" id="tabMenu" data-theme="menu">☕ การ์ดเมนู</button>
+  <button class="tab-btn" id="tabBean" data-theme="bean">🌱 เมล็ดที่ลอง</button>
 </div>
 
 <div class="pile-wrap">
@@ -174,7 +183,7 @@
 
 <div class="nav-link"><a href="index.html">🃏 จั่วไพ่ทาโร่</a></div>
 
-<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-A (multi-theme)</div>
+<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-B (bean theme)</div>
 
 <div class="save-toast" id="saveToast">บันทึกตำแหน่งแล้ว ✓</div>
 
@@ -226,8 +235,32 @@ function seededPos(seedStr, idx){
   };
 }
 
+let beanUniverseCache = null;
+
+// จักรวาลเมล็ดทั้งหมด = ทุกเมล็ดที่เคยมีใครก็ตามปลดล็อกมาแล้วจริง (ไม่ hardcode จำนวน)
+// เมล็ดที่เลิกขายไปแล้วยังนับรวมอยู่ในนี้ด้วย เพื่อไม่ให้ % เกิน 100 เวลาลูกค้าเก่าเคยได้เมล็ดที่ตอนนี้ไม่มีขายแล้ว
+async function fetchBeanUniverse(){
+  if (beanUniverseCache) return beanUniverseCache;
+  const { data, error } = await sb.from('customer_card_collection')
+    .select('card_name')
+    .eq('theme', 'bean');
+  if (error) throw error;
+  const names = [...new Set((data || []).map(r => r.card_name))].sort();
+  beanUniverseCache = names;
+  return names;
+}
+
 async function getCardsForTheme(theme){
   if (theme === 'tarot') return TAROT_CARDS;
+  if (theme === 'bean'){
+    const names = await fetchBeanUniverse();
+    return names.map((n, i) => ({
+      slug: 'bean-' + i,
+      name: n,
+      isTextCard: true,
+      pos: seededPos(n, i),
+    }));
+  }
   const items = await fetchMenuItems();
   return items.map((m, i) => ({
     slug: 'menu-' + i,
@@ -247,7 +280,7 @@ const MIN_SCALE = 0.55, MAX_SCALE = 1.9;
 
 function makeSticker(card, boxEl){
   const el = document.createElement('div');
-  el.className = 'sticker';
+  el.className = 'sticker' + (card.isTextCard ? ' bean-card' : '');
 
   const saved = card.saved || {};
   const p = card.pos;
@@ -267,11 +300,15 @@ function makeSticker(card, boxEl){
   }
   applyTransform();
 
-  const img = document.createElement('img');
-  img.src = card.imgUrl ? card.imgUrl : ('images/front_' + card.slug + '.jpg');
-  img.alt = card.name;
-  img.draggable = false;
-  el.appendChild(img);
+  if (card.isTextCard){
+    el.innerHTML = '<div><span class="bean-emoji">🌱</span>' + card.name + '</div>';
+  } else {
+    const img = document.createElement('img');
+    img.src = card.imgUrl ? card.imgUrl : ('images/front_' + card.slug + '.jpg');
+    img.alt = card.name;
+    img.draggable = false;
+    el.appendChild(img);
+  }
 
   // ---- gesture handling: 1 pointer = drag, 2 pointers = rotate + scale ----
   const active = new Map(); // pointerId -> {x,y} in box-relative px
@@ -398,6 +435,7 @@ function persistPosition(card, state){
 const EMPTY_TEXT = {
   tarot: '<div class="icon">🐾</div><div>ยังไม่มีไพ่ในสมุด<br>ไปจั่วไพ่ใบแรกแล้วสั่งเมนูกันเลย!</div>',
   menu: '<div class="icon">☕</div><div>ยังไม่มีการ์ดเมนูเลย<br>สั่งเมนูแรกผ่านหน้าสั่งซื้อเพื่อปลดล็อกการ์ด!</div>',
+  bean: '<div class="icon">🌱</div><div>ยังไม่มีการ์ดเมล็ดเลย<br>สั่งเมนูกาแฟแล้วรอบาริสต้าชงเสร็จ การ์ดจะปลดล็อกอัตโนมัติ!</div>',
 };
 
 function renderPile(themeCards, unlockedRows){
@@ -457,11 +495,13 @@ async function loadCollection(theme){
 
 document.getElementById('tabTarot').addEventListener('click', () => switchTab('tarot'));
 document.getElementById('tabMenu').addEventListener('click', () => switchTab('menu'));
+document.getElementById('tabBean').addEventListener('click', () => switchTab('bean'));
 
 function switchTab(theme){
   if (theme === currentTheme) return;
   document.getElementById('tabTarot').classList.toggle('active', theme === 'tarot');
   document.getElementById('tabMenu').classList.toggle('active', theme === 'menu');
+  document.getElementById('tabBean').classList.toggle('active', theme === 'bean');
   statusMsg.style.display = 'none';
   loadCollection(theme);
 }
