@@ -13,8 +13,8 @@
     --brown:#5A361B; --brown-dim:rgba(90,54,27,0.6); --brown-faint:rgba(90,54,27,0.35);
     --orange:#E8621A; --gold:#C9A44A;
   }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none;}
-  html,body{height:100%;overscroll-behavior:none;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
   body{
     background:
       radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232,98,26,0.08), transparent 60%),
@@ -22,7 +22,6 @@
       var(--cream);
     font-family:'Mitr',sans-serif; color:var(--brown);
     min-height:100%; padding-bottom:48px;
-    touch-action:pan-y;
   }
 
   .demo-banner{
@@ -44,16 +43,13 @@
     font-size:clamp(20px,5.5vw,28px); letter-spacing:0.3px; color:var(--brown);
   }
   .sub{ font-size:12px;color:var(--brown-dim);margin-top:6px;font-weight:300; }
-  .hint{ font-size:10.5px;color:#A8791F;margin-top:8px;font-weight:300; }
 
-  .tabs{
-    display:flex;justify-content:center;gap:8px;margin-top:18px;padding:0 16px;
-  }
+  .tabs{ display:flex;justify-content:center;gap:8px;margin-top:18px;padding:0 16px; }
   .tab-btn{
-    font-family:'Mitr',sans-serif;font-size:12px;font-weight:400;letter-spacing:0.3px;
+    font-family:'Mitr',sans-serif;font-size:13px;font-weight:400;
     color:var(--brown-dim);background:rgba(255,255,255,0.5);
     border:1px solid rgba(90,54,27,0.18);border-radius:999px;
-    padding:8px 18px;cursor:pointer;transition:all .2s ease;
+    padding:9px 20px;cursor:pointer;
   }
   .tab-btn.active{
     color:#FFFFFF;background:linear-gradient(90deg,var(--orange),#F0894A);
@@ -61,92 +57,79 @@
     box-shadow:0 3px 10px rgba(232,98,26,0.3);
   }
 
-  .pile-wrap{ max-width:460px;margin:16px auto 0;padding:0 16px; touch-action:pan-y; }
-  .pile-box{
-    position:relative;
-    width:100%;
-    height:78vh;
-    max-height:640px;
-    min-height:440px;
-    background:
-      radial-gradient(ellipse at 50% 30%, rgba(232,98,26,0.07), transparent 65%),
-      repeating-linear-gradient(135deg, rgba(90,54,27,0.02) 0 2px, transparent 2px 26px),
-      var(--cream-soft);
-    border:1px dashed rgba(201,164,74,0.45);
-    border-radius:20px;
-    overflow:hidden;
-    touch-action:none;
-  }
-  .sticker{
-    position:absolute;
-    border-radius:8px;
-    overflow:hidden;
-    box-shadow:0 6px 14px rgba(90,54,27,0.28), 0 0 0 3px #FFFFFF;
-    aspect-ratio:0.734;
-    cursor:grab;
-    will-change:transform;
-    touch-action:none;
-    user-select:none;
-    -webkit-user-drag:none;
-  }
-  .sticker.dragging{ cursor:grabbing; box-shadow:0 14px 30px rgba(90,54,27,0.4), 0 0 0 3px var(--gold); }
-  .sticker img{ width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none; }
+  .page{ max-width:480px;margin:0 auto;padding:20px 16px 0; display:none; }
+  .page.active{ display:block; }
 
-  .sticker.bean-card{
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:8px; background:linear-gradient(160deg, #6B4226, #3D2510);
-    color:#F7EDE0; font-family:'Playfair Display',serif; font-weight:700;
-    font-size:12px; line-height:1.35;
+  /* ===== HISTORY FEED ===== */
+  .history-item{
+    display:flex; gap:12px; align-items:center;
+    background:var(--cream-soft); border:1px solid rgba(90,54,27,0.1);
+    border-radius:14px; padding:10px 14px; margin-bottom:10px;
   }
-  .sticker.bean-card .bean-emoji{ font-size:20px; display:block; margin-bottom:4px; }
+  .history-thumb{
+    width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;
+    background:rgba(90,54,27,0.08);
+  }
+  .history-thumb.placeholder{ display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .history-body{ flex:1;min-width:0; }
+  .history-name{ font-size:14px;font-weight:500;color:var(--brown); }
+  .history-date{ font-size:10.5px;color:var(--brown-dim);margin-top:2px;font-weight:300; }
+  .history-tags{ display:flex;gap:5px;margin-top:5px;flex-wrap:wrap; }
+  .history-tag{
+    font-size:9.5px;padding:2px 8px;border-radius:999px;font-weight:400;
+    background:rgba(232,98,26,0.1);color:var(--orange);border:1px solid rgba(232,98,26,0.25);
+  }
+  .history-tag.bean{ background:rgba(90,54,27,0.08);color:var(--brown-dim);border-color:rgba(90,54,27,0.15); }
 
-  .empty-pile{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:8px;color:var(--brown-dim);font-size:12px;text-align:center;
-    padding:30px;
-  }
-  .empty-pile .icon{ font-size:28px;opacity:0.5; }
+  /* ===== SUMMARY SECTIONS ===== */
+  .section{ margin-bottom:30px; }
+  .section-head{ display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px; }
+  .section-title{ font-family:'Playfair Display',serif;font-weight:700;font-size:17px;color:var(--brown); }
+  .section-count{ font-size:12px;color:var(--orange);font-weight:500; }
+  .section-track{ height:5px;border-radius:999px;background:rgba(90,54,27,0.08);overflow:hidden;margin-bottom:14px; }
+  .section-fill{ height:100%;border-radius:999px;background:linear-gradient(90deg,var(--orange),var(--gold));transition:width .5s ease; }
 
-  .progress-row{
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    margin-top:14px;font-size:12px;color:var(--brown-dim);
+  .grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
+  .grid.wide{ grid-template-columns:repeat(2,1fr); }
+
+  .gcard{
+    aspect-ratio:0.75; border-radius:10px; overflow:hidden; position:relative;
+    box-shadow:0 3px 8px rgba(90,54,27,0.15);
   }
-  .progress-row b{ color:var(--orange);font-weight:500;font-size:15px; }
-  .progress-track{
-    width:110px;height:5px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;
-  }
-  .progress-fill{
-    height:100%;border-radius:999px;
-    background:linear-gradient(90deg,var(--orange),var(--gold));
-    transition:width .6s ease;width:0%;
+  .gcard img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .gcard.locked{ opacity:0.32;filter:grayscale(1); box-shadow:none; }
+  .gcard-label{
+    position:absolute;left:0;right:0;bottom:0;padding:4px 5px 5px;
+    background:linear-gradient(180deg,transparent,rgba(0,0,0,0.65));
+    color:#fff;font-size:9px;font-weight:500;line-height:1.2;
   }
 
-  .save-toast{
-    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
-    background:rgba(58,107,74,0.95);color:#F7EDE0;font-size:12px;
-    padding:9px 18px;border-radius:999px;opacity:0;transition:opacity .25s ease, transform .25s ease;
-    pointer-events:none;z-index:99;
+  .medal-card{
+    aspect-ratio:0.85; border-radius:14px; display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:10px 8px;
+    background:linear-gradient(160deg,#C9A44A,#8a6a2e); color:#FFF9EC;
+    box-shadow:0 4px 12px rgba(201,164,74,0.35);
   }
-  .save-toast.show{ opacity:1;transform:translateX(-50%) translateY(0); }
+  .medal-card.locked{
+    background:rgba(90,54,27,0.06); color:var(--brown-faint);
+    box-shadow:none; border:1px dashed rgba(90,54,27,0.2);
+  }
+  .medal-emoji{ font-size:26px;margin-bottom:6px; }
+  .medal-title{ font-family:'Mitr',sans-serif;font-weight:500;font-size:11.5px;line-height:1.3; }
+  .medal-dates{ font-size:8.5px;margin-top:5px;opacity:0.85;line-height:1.4; }
 
-  .future-theme{
-    max-width:440px;margin:22px auto 0;padding:16px 20px;
-    border:1px dashed rgba(90,54,27,0.18); border-radius:14px;
-    text-align:center; color:var(--brown-dim); font-size:11.5px; line-height:1.8;
+  .bean-gcard{
+    aspect-ratio:0.85; border-radius:10px; display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:8px;font-family:'Playfair Display',serif;font-weight:700;font-size:11px;
+    background:linear-gradient(160deg,#6B4226,#3D2510); color:#F7EDE0;
+    box-shadow:0 3px 8px rgba(90,54,27,0.2);
   }
-  .future-theme b{ color:var(--orange);font-weight:500; }
+  .bean-gcard.locked{ background:rgba(90,54,27,0.06);color:var(--brown-faint);box-shadow:none;border:1px dashed rgba(90,54,27,0.2); }
 
-  .nav-link{ display:block;text-align:center;margin-top:24px; }
-  .nav-link a{
-    display:inline-block;font-size:11.5px;color:var(--orange);text-decoration:none;
-    border:1px solid rgba(232,98,26,0.35);padding:8px 18px;border-radius:999px;
-  }
+  .empty-note{ text-align:center;color:var(--brown-dim);font-size:12px;padding:30px 20px;font-weight:300; }
 
   .status{ text-align:center;font-size:12px;color:var(--brown-dim);padding:20px 20px; }
-  .foot{
-    text-align:center;font-size:10px;letter-spacing:2px;
-    text-transform:uppercase;color:var(--brown-faint); margin-top:24px;
-  }
+  .foot{ text-align:center;font-size:10px;letter-spacing:2px; text-transform:uppercase;color:var(--brown-faint); margin-top:24px; }
 </style>
 </head>
 <body>
@@ -157,356 +140,209 @@
   <div class="eyebrow">🐱 กาแฟแมวส้ม</div>
   <h1>สมุดสะสมกาแฟแมวส้ม</h1>
   <div class="sub" id="subline">ของสะสมที่คุณได้จากทุกกิมมิกของร้าน</div>
-  <div class="hint">ลากไพ่เพื่อจัดวาง · ใช้ 2 นิ้วบิด/ถ่างเพื่อหมุนและปรับขนาด</div>
 </div>
 
 <div class="tabs">
-  <button class="tab-btn active" id="tabTarot" data-theme="tarot">🃏 ไพ่ทาโร่</button>
-  <button class="tab-btn" id="tabMenu" data-theme="menu">☕ การ์ดเมนู</button>
-  <button class="tab-btn" id="tabBean" data-theme="bean">🌱 เมล็ดที่ลอง</button>
+  <button class="tab-btn active" id="tabHistory" data-page="history">📖 ประวัติเครื่องดื่ม</button>
+  <button class="tab-btn" id="tabSummary" data-page="summary">🏆 สรุปการสะสม</button>
 </div>
 
-<div class="pile-wrap">
-  <div class="pile-box" id="pileBox"></div>
+<div class="page active" id="pageHistory">
+  <div id="historyList"></div>
 </div>
 
-<div class="progress-row">
-  <span>เก็บได้</span><b id="progNum">0</b><span>/ <span id="progDenom">12</span> ใบ</span>
-  <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
-</div>
+<div class="page" id="pageSummary">
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">☕ เมนูที่ลองแล้ว</span>
+      <span class="section-count" id="menuCount">0/0</span>
+    </div>
+    <div class="section-track"><div class="section-fill" id="menuFill"></div></div>
+    <div class="grid" id="menuGrid"></div>
+  </div>
 
-<div class="future-theme">
-  <b>หินมงคล</b> และ <b>การ์ดเลือดกรุ๊ป</b> กำลังจะมาเร็วๆ นี้ — เก็บครบทุก theme ในสมุดเล่มเดียวกัน
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🎮 Theme ที่ร่วมสนุก</span>
+      <span class="section-count" id="themeCount">0/0</span>
+    </div>
+    <div class="section-track"><div class="section-fill" id="themeFill"></div></div>
+    <div class="grid wide" id="themeGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🌱 เมล็ดที่ลองแล้ว</span>
+      <span class="section-count" id="beanCount">0/0</span>
+    </div>
+    <div class="section-track"><div class="section-fill" id="beanFill"></div></div>
+    <div class="grid" id="beanGrid"></div>
+  </div>
 </div>
 
 <div class="status" id="statusMsg" style="display:none;"></div>
-
-<div class="nav-link"><a href="index.html">🃏 จั่วไพ่ทาโร่</a></div>
-
-<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-B (bean theme)</div>
-
-<div class="save-toast" id="saveToast">บันทึกตำแหน่งแล้ว ✓</div>
+<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-C (2-page static)</div>
 
 <script>
-const TAROT_CARDS = [{"slug": "justice", "num": "I", "name": "Justice", "drink_display": "Iced Americano", "drink_db": "Iced Americano", "pos": {"top": 3, "left": 8, "rot": -8, "size": 24}}, {"slug": "priestess", "num": "II", "name": "The Priestess", "drink_display": "Coconut Matcha", "drink_db": "Coconut Matcha", "pos": {"top": 2, "left": 40, "rot": 6, "size": 26}}, {"slug": "empress", "num": "III", "name": "The Empress", "drink_display": "Oat Matcha", "drink_db": "Oat Matcha", "pos": {"top": 5, "left": 70, "rot": -5, "size": 23}}, {"slug": "lovers", "num": "VI", "name": "The Lovers", "drink_display": "Iced Latte", "drink_db": "Iced Latte", "pos": {"top": 20, "left": 4, "rot": 9, "size": 22}}, {"slug": "hermit", "num": "IX", "name": "The Hermit", "drink_display": "Pure Matcha", "drink_db": "Pure Matcha", "pos": {"top": 22, "left": 34, "rot": -10, "size": 27}}, {"slug": "wheel", "num": "X", "name": "Wheel of Fortune", "drink_display": "Thai Tea", "drink_db": "Thai Tea", "pos": {"top": 18, "left": 62, "rot": 5, "size": 24}}, {"slug": "strength", "num": "XI", "name": "Strength", "drink_display": "Cocoa", "drink_db": "Cocoa", "pos": {"top": 40, "left": 12, "rot": -6, "size": 25}}, {"slug": "temperance", "num": "XIV", "name": "Temperance", "drink_display": "Matcha Latte", "drink_db": "Matcha Latte", "pos": {"top": 38, "left": 44, "rot": 8, "size": 23}}, {"slug": "star", "num": "XVII", "name": "The Star", "drink_display": "Oat Latte", "drink_db": "Oat Latte", "pos": {"top": 42, "left": 72, "rot": -9, "size": 22}}, {"slug": "moon", "num": "XVIII", "name": "The Moon", "drink_display": "Dirty Coffee", "drink_db": "Dirty", "pos": {"top": 60, "left": 6, "rot": 7, "size": 24}}, {"slug": "sun", "num": "XIX", "name": "The Sun", "drink_display": "Orange Americano", "drink_db": "Orange Americano", "pos": {"top": 62, "left": 38, "rot": -5, "size": 26}}, {"slug": "world", "num": "XXI", "name": "The World", "drink_display": "Coconut Latte", "drink_db": "Coconut Latte", "pos": {"top": 58, "left": 68, "rot": 10, "size": 23}}];
-
-const LIFF_ID = "2010600301-npcl3uPM"; // Collection Book — LIFF ตัวเฉพาะของสมุดสะสม ผูกกับปุ่ม II ใน Rich Menu
+const LIFF_ID = "2010600301-npcl3uPM";
 const SUPABASE_URL = "https://nhzjnutvirjgiclkkfgx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oempudXR2aXJqZ2ljbGtrZmd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjc3NjEsImV4cCI6MjA5ODcwMzc2MX0.Bv2zsjmo3yd9YpmfxUAmXf-aaFy7SbY77fmM_k4f7eg";
-
-const DEMO_MODE = false; // LIFF ID confirmed set — always live now
+const DEMO_MODE = false;
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const demoBanner = document.getElementById('demoBanner');
-const pileBox = document.getElementById('pileBox');
-const progNum = document.getElementById('progNum');
-const progFill = document.getElementById('progFill');
 const subline = document.getElementById('subline');
 const statusMsg = document.getElementById('statusMsg');
-const saveToast = document.getElementById('saveToast');
-
 if (DEMO_MODE) demoBanner.classList.add('show');
 
-let liffProfile = null;
-let toastTimer = null;
-let currentTheme = 'tarot';
-let menuItemsCache = null;
-
-// ดึงเมนูสดจาก menu_items เสมอ — ห้าม hardcode รายชื่อเมนู (ตามกฎ single source of truth ของร้าน)
-async function fetchMenuItems(){
-  if (menuItemsCache) return menuItemsCache;
-  const { data, error } = await sb.from('menu_items').select('name, image_url').order('name');
-  if (error) throw error;
-  menuItemsCache = data || [];
-  return menuItemsCache;
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
 }
 
-// ตำแหน่งกระจายแบบสุ่มคงที่ (deterministic) อิงชื่อเมนู เพื่อให้เมนูใหม่ที่เพิ่มมาทีหลังก็มีตำแหน่งเริ่มต้นทันที ไม่ต้องกำหนดมือทีละใบ
-function seededPos(seedStr, idx){
-  let h = 0;
-  for (const c of seedStr) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  h = (h + idx * 7919) >>> 0;
-  function rand(){ h = (h * 1103515245 + 12345) >>> 0; return (h % 10000) / 10000; }
-  return {
-    top: 4 + rand() * 78,
-    left: 4 + rand() * 76,
-    rot: -12 + rand() * 24,
-    size: 21 + rand() * 6,
-  };
+document.getElementById('tabHistory').addEventListener('click', () => switchPage('history'));
+document.getElementById('tabSummary').addEventListener('click', () => switchPage('summary'));
+function switchPage(page){
+  document.getElementById('tabHistory').classList.toggle('active', page === 'history');
+  document.getElementById('tabSummary').classList.toggle('active', page === 'summary');
+  document.getElementById('pageHistory').classList.toggle('active', page === 'history');
+  document.getElementById('pageSummary').classList.toggle('active', page === 'summary');
 }
 
-let beanUniverseCache = null;
-
-// จักรวาลเมล็ดทั้งหมด = ทุกเมล็ดที่เคยมีใครก็ตามปลดล็อกมาแล้วจริง (ไม่ hardcode จำนวน)
-// เมล็ดที่เลิกขายไปแล้วยังนับรวมอยู่ในนี้ด้วย เพื่อไม่ให้ % เกิน 100 เวลาลูกค้าเก่าเคยได้เมล็ดที่ตอนนี้ไม่มีขายแล้ว
-async function fetchBeanUniverse(){
-  if (beanUniverseCache) return beanUniverseCache;
-  const { data, error } = await sb.from('customer_card_collection')
-    .select('card_name')
-    .eq('theme', 'bean');
-  if (error) throw error;
-  const names = [...new Set((data || []).map(r => r.card_name))].sort();
-  beanUniverseCache = names;
-  return names;
-}
-
-async function getCardsForTheme(theme){
-  if (theme === 'tarot') return TAROT_CARDS;
-  if (theme === 'bean'){
-    const names = await fetchBeanUniverse();
-    return names.map((n, i) => ({
-      slug: 'bean-' + i,
-      name: n,
-      isTextCard: true,
-      pos: seededPos(n, i),
-    }));
+function renderHistory(rows, menuImageMap){
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  if (!rows.length){
+    list.innerHTML = '<div class="empty-note">ยังไม่มีประวัติการสั่ง<br>สั่งเครื่องดื่มแก้วแรกกันเลย!</div>';
+    return;
   }
-  const items = await fetchMenuItems();
-  return items.map((m, i) => ({
-    slug: 'menu-' + i,
-    name: m.name,
-    imgUrl: m.image_url,
-    pos: seededPos(m.name, i),
-  }));
-}
-
-function showSaveToast(){
-  saveToast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => saveToast.classList.remove('show'), 1200);
-}
-
-const MIN_SCALE = 0.55, MAX_SCALE = 1.9;
-
-function makeSticker(card, boxEl){
-  const el = document.createElement('div');
-  el.className = 'sticker' + (card.isTextCard ? ' bean-card' : '');
-
-  const saved = card.saved || {};
-  const p = card.pos;
-  let state = {
-    xPct: saved.pos_x != null ? saved.pos_x : p.left,
-    yPct: saved.pos_y != null ? saved.pos_y : p.top,
-    rotation: saved.rotation != null ? saved.rotation : p.rot,
-    scale: saved.scale != null ? saved.scale : 1,
-  };
-  const baseSizePct = p.size;
-
-  function applyTransform(){
-    el.style.left = state.xPct + '%';
-    el.style.top = state.yPct + '%';
-    el.style.width = baseSizePct + '%';
-    el.style.transform = `rotate(${state.rotation}deg) scale(${state.scale})`;
-  }
-  applyTransform();
-
-  if (card.isTextCard){
-    el.innerHTML = '<div><span class="bean-emoji">🌱</span>' + card.name + '</div>';
-  } else {
-    const img = document.createElement('img');
-    img.src = card.imgUrl ? card.imgUrl : ('images/front_' + card.slug + '.jpg');
-    img.alt = card.name;
-    img.draggable = false;
-    el.appendChild(img);
-  }
-
-  // ---- gesture handling: 1 pointer = drag, 2 pointers = rotate + scale ----
-  const active = new Map(); // pointerId -> {x,y} in box-relative px
-
-  let dragOffset = null;           // for 1-pointer drag
-  let pinchStart = null;           // for 2-pointer rotate/scale
-
-  function boxRect(){ return boxEl.getBoundingClientRect(); }
-
-  function toBoxPx(clientX, clientY){
-    const r = boxRect();
-    return { x: clientX - r.left, y: clientY - r.top };
-  }
-
-  function currentCenterPx(){
-    const r = boxRect();
-    return { x: (state.xPct/100)*r.width + (el.offsetWidth/2), y: (state.yPct/100)*r.height + (el.offsetHeight/2) };
-  }
-
-  el.addEventListener('pointerdown', (e) => {
-    el.setPointerCapture(e.pointerId);
-    active.set(e.pointerId, toBoxPx(e.clientX, e.clientY));
-    el.classList.add('dragging');
-    el.style.zIndex = 1000;
-
-    if (active.size === 1){
-      const pt = [...active.values()][0];
-      const r = boxRect();
-      dragOffset = {
-        dx: pt.x - (state.xPct/100)*r.width,
-        dy: pt.y - (state.yPct/100)*r.height,
-      };
-      pinchStart = null;
-    } else if (active.size === 2){
-      const pts = [...active.values()];
-      const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
-      pinchStart = {
-        dist: Math.hypot(dx, dy),
-        angle: Math.atan2(dy, dx) * 180 / Math.PI,
-        scale: state.scale,
-        rotation: state.rotation,
-      };
-      dragOffset = null;
-    }
-    e.preventDefault();
+  rows.forEach(r => {
+    const imgUrl = menuImageMap[r.menu_item_name];
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const thumb = imgUrl
+      ? `<img class="history-thumb" src="${imgUrl}" alt="">`
+      : `<div class="history-thumb placeholder">☕</div>`;
+    const tags = [];
+    if (r.channel === 'liff-tarot') tags.push('<span class="history-tag">🎴 ไพ่ทาโร่</span>');
+    if (r.bean_name) tags.push(`<span class="history-tag bean">🌱 ${r.bean_name}</span>`);
+    item.innerHTML = `
+      ${thumb}
+      <div class="history-body">
+        <div class="history-name">${r.menu_item_name}</div>
+        <div class="history-date">${fmtDate(r.created_at)}</div>
+        ${tags.length ? `<div class="history-tags">${tags.join('')}</div>` : ''}
+      </div>
+    `;
+    list.appendChild(item);
   });
-
-  function onMove(e){
-    if (!active.has(e.pointerId)) return;
-    active.set(e.pointerId, toBoxPx(e.clientX, e.clientY));
-
-    if (active.size === 1 && dragOffset){
-      const pt = [...active.values()][0];
-      const r = boxRect();
-      let newXpx = pt.x - dragOffset.dx;
-      let newYpx = pt.y - dragOffset.dy;
-      state.xPct = Math.max(-10, Math.min(100, (newXpx / r.width) * 100));
-      state.yPct = Math.max(-10, Math.min(100, (newYpx / r.height) * 100));
-      applyTransform();
-    } else if (active.size === 2 && pinchStart){
-      const pts = [...active.values()];
-      const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
-      const dist = Math.hypot(dx, dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      const scaleRatio = dist / (pinchStart.dist || 1);
-      state.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStart.scale * scaleRatio));
-      state.rotation = pinchStart.rotation + (angle - pinchStart.angle);
-      applyTransform();
-    }
-  }
-
-  function onUp(e){
-    if (!active.has(e.pointerId)) return;
-    active.delete(e.pointerId);
-    try{ el.releasePointerCapture(e.pointerId); }catch(err){}
-
-    if (active.size === 1){
-      // dropped from 2 down to 1 — restart drag baseline from remaining pointer
-      const pt = [...active.values()][0];
-      const r = boxRect();
-      dragOffset = {
-        dx: pt.x - (state.xPct/100)*r.width,
-        dy: pt.y - (state.yPct/100)*r.height,
-      };
-      pinchStart = null;
-    }
-    if (active.size === 0){
-      el.classList.remove('dragging');
-      el.style.zIndex = '';
-      dragOffset = null;
-      pinchStart = null;
-      persistPosition(card, state);
-    }
-  }
-
-  el.addEventListener('pointermove', onMove);
-  el.addEventListener('pointerup', onUp);
-  el.addEventListener('pointercancel', onUp);
-
-  return el;
 }
 
-let saveDebounceTimers = {};
-function persistPosition(card, state){
-  if (DEMO_MODE || !liffProfile) return;
-  clearTimeout(saveDebounceTimers[card.slug]);
-  saveDebounceTimers[card.slug] = setTimeout(async () => {
-    try{
-      await sb.from('customer_card_collection')
-        .update({
-          pos_x: Math.round(state.xPct * 100) / 100,
-          pos_y: Math.round(state.yPct * 100) / 100,
-          rotation: Math.round(state.rotation * 100) / 100,
-          scale: Math.round(state.scale * 1000) / 1000,
-        })
-        .eq('line_user_id', liffProfile.userId)
-        .eq('theme', currentTheme)
-        .eq('card_name', card.name);
-      showSaveToast();
-    }catch(e){ console.error('save position failed', e); }
-  }, 150);
+function renderMenuSection(unlockedNames, menuItems){
+  const grid = document.getElementById('menuGrid');
+  grid.innerHTML = '';
+  const unlockedSet = new Set(unlockedNames);
+  menuItems.forEach(m => {
+    const unlocked = unlockedSet.has(m.name);
+    const c = document.createElement('div');
+    c.className = 'gcard' + (unlocked ? '' : ' locked');
+    c.innerHTML = (unlocked && m.image_url)
+      ? `<img src="${m.image_url}" alt="${m.name}"><div class="gcard-label">${m.name}</div>`
+      : `<div class="gcard-label" style="position:static;background:none;padding:0;display:flex;align-items:center;justify-content:center;height:100%;color:var(--brown-faint);">?</div>`;
+    grid.appendChild(c);
+  });
+  document.getElementById('menuCount').textContent = unlockedSet.size + '/' + menuItems.length;
+  document.getElementById('menuFill').style.width = Math.round(unlockedSet.size / (menuItems.length || 1) * 100) + '%';
 }
 
-const EMPTY_TEXT = {
-  tarot: '<div class="icon">🐾</div><div>ยังไม่มีไพ่ในสมุด<br>ไปจั่วไพ่ใบแรกแล้วสั่งเมนูกันเลย!</div>',
-  menu: '<div class="icon">☕</div><div>ยังไม่มีการ์ดเมนูเลย<br>สั่งเมนูแรกผ่านหน้าสั่งซื้อเพื่อปลดล็อกการ์ด!</div>',
-  bean: '<div class="icon">🌱</div><div>ยังไม่มีการ์ดเมล็ดเลย<br>สั่งเมนูกาแฟแล้วรอบาริสต้าชงเสร็จ การ์ดจะปลดล็อกอัตโนมัติ!</div>',
-};
-
-function renderPile(themeCards, unlockedRows){
-  pileBox.innerHTML = '';
-  const unlockedMap = new Map(unlockedRows.map(r => [r.card_name, r]));
-  const unlockedCards = themeCards.filter(c => unlockedMap.has(c.name))
-    .map(c => ({ ...c, saved: unlockedMap.get(c.name) }));
-
-  if (unlockedCards.length === 0){
-    const empty = document.createElement('div');
-    empty.className = 'empty-pile';
-    empty.innerHTML = EMPTY_TEXT[currentTheme] || EMPTY_TEXT.tarot;
-    pileBox.appendChild(empty);
-  } else {
-    unlockedCards.forEach(card => {
-      pileBox.appendChild(makeSticker(card, pileBox));
-    });
-  }
-
-  progNum.textContent = unlockedCards.length;
-  const denom = themeCards.length || 1;
-  document.getElementById('progDenom').textContent = denom;
-  progFill.style.width = Math.round(unlockedCards.length / denom * 100) + '%';
+function renderThemeSection(unlockedNames, themePeriods){
+  const grid = document.getElementById('themeGrid');
+  grid.innerHTML = '';
+  const unlockedSet = new Set(unlockedNames);
+  themePeriods.forEach(t => {
+    const unlocked = unlockedSet.has(t.theme_key);
+    const dateRange = fmtDate(t.start_date) + ' – ' + (t.end_date ? fmtDate(t.end_date) : 'ปัจจุบัน');
+    const c = document.createElement('div');
+    c.className = 'medal-card' + (unlocked ? '' : ' locked');
+    c.innerHTML = `
+      <div class="medal-emoji">${unlocked ? '🏅' : '🔒'}</div>
+      <div class="medal-title">${t.title}</div>
+      <div class="medal-dates">${dateRange}</div>
+    `;
+    grid.appendChild(c);
+  });
+  document.getElementById('themeCount').textContent = unlockedSet.size + '/' + themePeriods.length;
+  document.getElementById('themeFill').style.width = Math.round(unlockedSet.size / (themePeriods.length || 1) * 100) + '%';
 }
 
-async function loadCollection(theme){
-  currentTheme = theme || 'tarot';
+function renderBeanSection(unlockedNames, beanUniverse){
+  const grid = document.getElementById('beanGrid');
+  grid.innerHTML = '';
+  const unlockedSet = new Set(unlockedNames);
+  beanUniverse.forEach(name => {
+    const unlocked = unlockedSet.has(name);
+    const c = document.createElement('div');
+    c.className = 'bean-gcard' + (unlocked ? '' : ' locked');
+    c.innerHTML = unlocked ? ('🌱 ' + name) : '?';
+    grid.appendChild(c);
+  });
+  document.getElementById('beanCount').textContent = unlockedSet.size + '/' + beanUniverse.length;
+  document.getElementById('beanFill').style.width = Math.round(unlockedSet.size / (beanUniverse.length || 1) * 100) + '%';
+}
+
+async function loadAll(lineUserId){
+  const [menuRes, themeRes, beanUniverseRes, myCardsRes, historyRes] = await Promise.all([
+    sb.from('menu_items').select('name, image_url').order('name'),
+    sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
+    sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
+    sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
+    sb.from('preorders').select('menu_item_name, created_at, channel, bean_name').eq('line_user_id', lineUserId).order('created_at', { ascending: false }),
+  ]);
+
+  if (menuRes.error) throw menuRes.error;
+  if (themeRes.error) throw themeRes.error;
+  if (beanUniverseRes.error) throw beanUniverseRes.error;
+  if (myCardsRes.error) throw myCardsRes.error;
+  if (historyRes.error) throw historyRes.error;
+
+  const menuItems = menuRes.data || [];
+  const menuImageMap = {};
+  menuItems.forEach(m => menuImageMap[m.name] = m.image_url);
+
+  const themePeriods = themeRes.data || [];
+  const beanUniverse = [...new Set((beanUniverseRes.data || []).map(r => r.card_name))].sort();
+
+  const myCards = myCardsRes.data || [];
+  const myMenu = myCards.filter(c => c.theme === 'menu').map(c => c.card_name);
+  const myTheme = myCards.filter(c => c.theme === 'participation').map(c => c.card_name);
+  const myBean = myCards.filter(c => c.theme === 'bean').map(c => c.card_name);
+
+  renderHistory(historyRes.data || [], menuImageMap);
+  renderMenuSection(myMenu, menuItems);
+  renderThemeSection(myTheme, themePeriods);
+  renderBeanSection(myBean, beanUniverse);
+}
+
+async function init(){
   if (DEMO_MODE){
-    renderPile(await getCardsForTheme(currentTheme), []);
+    await loadAll('demo-user');
     return;
   }
   try{
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()){ liff.login(); return; }
     const profile = await liff.getProfile();
-    liffProfile = profile;
     subline.textContent = 'ของสะสมของ ' + profile.displayName;
-
-    const themeCards = await getCardsForTheme(currentTheme);
-
-    const { data, error } = await sb.from('customer_card_collection')
-      .select('card_name, unlocked_at, pos_x, pos_y, rotation, scale')
-      .eq('line_user_id', profile.userId)
-      .eq('theme', currentTheme)
-      .order('unlocked_at', { ascending: true });
-    if (error) throw error;
-
-    renderPile(themeCards, data || []);
-
+    await loadAll(profile.userId);
   }catch(e){
     console.error(e);
     statusMsg.style.display = 'block';
     statusMsg.textContent = 'โหลดสมุดสะสมไม่สำเร็จ ลองเปิดหน้านี้ใหม่อีกครั้ง';
-    renderPile(await getCardsForTheme(currentTheme).catch(() => []), []);
   }
 }
 
-document.getElementById('tabTarot').addEventListener('click', () => switchTab('tarot'));
-document.getElementById('tabMenu').addEventListener('click', () => switchTab('menu'));
-document.getElementById('tabBean').addEventListener('click', () => switchTab('bean'));
-
-function switchTab(theme){
-  if (theme === currentTheme) return;
-  document.getElementById('tabTarot').classList.toggle('active', theme === 'tarot');
-  document.getElementById('tabMenu').classList.toggle('active', theme === 'menu');
-  document.getElementById('tabBean').classList.toggle('active', theme === 'bean');
-  statusMsg.style.display = 'none';
-  loadCollection(theme);
-}
-
-loadCollection('tarot');
+init();
 </script>
 
 </body>
