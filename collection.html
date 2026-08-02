@@ -61,7 +61,7 @@
   .page.active{ display:block; }
 
   /* ===== HISTORY FEED (grid, not list) ===== */
-  .history-grid{ display:grid;grid-template-columns:repeat(3,1fr);gap:11px; }
+  .history-grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:9px; }
   .history-item{
     background:var(--cream-soft); border:1px solid rgba(90,54,27,0.1);
     border-radius:13px; overflow:hidden;
@@ -86,43 +86,30 @@
   .section-track{ height:5px;border-radius:999px;background:rgba(90,54,27,0.08);overflow:hidden;margin-bottom:14px; }
   .section-fill{ height:100%;border-radius:999px;background:linear-gradient(90deg,var(--orange),var(--gold));transition:width .5s ease; }
 
-  .grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:10px 9px; }
+  .grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:12px 9px; }
   .cell{ display:flex;flex-direction:column;align-items:center; }
 
-  /* locked mark — consistent "quest not unlocked yet" frame, used across all 3 groups */
+  /* เหรียญวงกลม — ใช้เหมือนกันทุกกลุ่ม (เมนู/Theme/เมล็ด) เขียนแค่ชื่อ ไม่ใช้รูปเลย
+     กันไม่ให้ไปหยิบรูปที่ผูกกับ theme ใดธีมหนึ่งมาใช้ในหน้าเหรียญสะสม */
+  .medal-circle{
+    width:100%;aspect-ratio:1;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:8px; font-family:'Mitr',sans-serif;font-weight:500;font-size:10px;line-height:1.25;
+    color:#FFF9EC;
+  }
+  .medal-circle.menu{ background:radial-gradient(circle at 35% 30%, #F5A86A, var(--orange) 60%, #A84A14); box-shadow:0 4px 10px rgba(232,98,26,0.35); }
+  .medal-circle.theme{ background:radial-gradient(circle at 35% 30%, #E8D080, var(--gold) 55%, #8a6a2e); box-shadow:0 4px 10px rgba(201,164,74,0.4); }
+  .medal-circle.bean{ background:radial-gradient(circle at 35% 30%, #8a6142, #3D2510 65%); box-shadow:0 4px 10px rgba(90,54,27,0.3); }
+
   .lock-mark{
-    width:100%;aspect-ratio:1;border-radius:10px;
+    width:100%;aspect-ratio:1;border-radius:50%;
     border:1.5px dashed rgba(90,54,27,0.28);
     background:rgba(90,54,27,0.04);
     display:flex;align-items:center;justify-content:center;
     font-size:16px;color:var(--brown-faint);
   }
-  .cell.circle .lock-mark{ border-radius:50%; }
-  .cell-label{ font-size:9px;color:var(--brown-dim);margin-top:5px;text-align:center;line-height:1.25;font-weight:300; }
+  .cell-label{ font-size:8.5px;color:var(--brown-dim);margin-top:5px;text-align:center;line-height:1.25;font-weight:300; }
   .cell-label.locked{ color:var(--brown-faint); }
-
-  /* เมนู — รูปจริง */
-  .menu-photo{
-    width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;
-    box-shadow:0 3px 8px rgba(90,54,27,0.15);
-  }
-  .menu-photo img{ width:100%;height:100%;object-fit:cover;display:block; }
-
-  /* เมล็ด — การ์ดข้อความ */
-  .bean-tile{
-    width:100%;aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    text-align:center;font-size:22px;
-    background:linear-gradient(160deg,#6B4226,#3D2510); color:#F7EDE0;
-    box-shadow:0 3px 8px rgba(90,54,27,0.2);
-  }
-
-  /* Theme — เหรียญวงกลม */
-  .medal{
-    width:100%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(circle at 35% 30%, #E8D080, #C9A44A 55%, #8a6a2e);
-    color:#FFF9EC; box-shadow:0 4px 12px rgba(201,164,74,0.4), inset 0 0 0 2px rgba(255,255,255,0.25);
-    font-size:20px;
-  }
 
   .empty-note{ text-align:center;color:var(--brown-dim);font-size:12px;padding:30px 20px;font-weight:300; }
 
@@ -142,7 +129,7 @@
 
 <div class="tabs">
   <button class="tab-btn active" id="tabHistory" data-page="history">📖 ประวัติเครื่องดื่ม</button>
-  <button class="tab-btn" id="tabSummary" data-page="summary">🏆 สรุปการสะสม</button>
+  <button class="tab-btn" id="tabSummary" data-page="summary">🏅 เหรียญสะสมของคุณ</button>
 </div>
 
 <div class="page active" id="pageHistory">
@@ -179,7 +166,7 @@
 </div>
 
 <div class="status" id="statusMsg" style="display:none;"></div>
-<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-D (grid redesign)</div>
+<div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-E (circle medals, no photos)</div>
 
 <script>
 const LIFF_ID = "2010600301-npcl3uPM";
@@ -247,7 +234,7 @@ function renderMenuSection(unlockedNames, menuItems){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="menu-photo"><img src="${m.image_url}" alt="${m.name}"></div><div class="cell-label">${m.name}</div>`
+      ? `<div class="medal-circle menu">${m.name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
     grid.appendChild(cell);
   });
@@ -264,9 +251,9 @@ function renderThemeSection(unlockedNames, themePeriods){
     const unlocked = unlockedSet.has(t.theme_key);
     const dateRange = fmtDate(t.start_date) + ' – ' + (t.end_date ? fmtDate(t.end_date) : 'ปัจจุบัน');
     const cell = document.createElement('div');
-    cell.className = 'cell circle';
+    cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="medal">🏅</div><div class="cell-label">${t.title}<br>${dateRange}</div>`
+      ? `<div class="medal-circle theme">${t.title}</div><div class="cell-label">${dateRange}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">${t.title}<br>${dateRange}</div>`;
     grid.appendChild(cell);
   });
@@ -284,7 +271,7 @@ function renderBeanSection(unlockedNames, beanUniverse){
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.innerHTML = unlocked
-      ? `<div class="bean-tile">🌱</div><div class="cell-label">${name}</div>`
+      ? `<div class="medal-circle bean">${name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
     grid.appendChild(cell);
   });
