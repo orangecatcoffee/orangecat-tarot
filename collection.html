@@ -127,6 +127,35 @@
 
   .status{ text-align:center;font-size:12px;color:var(--brown-dim);padding:20px 20px; }
   .foot{ text-align:center;font-size:10px;letter-spacing:2px; text-transform:uppercase;color:var(--brown-faint); margin-top:24px; }
+
+  /* ===== LIGHTBOX — แตะการ์ด/เหรียญเพื่อขยายดูรายละเอียด ===== */
+  .history-item, .cell{ cursor:pointer; }
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(20,10,5,0.72);
+    display:none; align-items:center; justify-content:center;
+    z-index:200; padding:28px; backdrop-filter:blur(2px);
+  }
+  .lightbox-overlay.show{ display:flex; }
+  .lightbox-card{
+    background:var(--cream-soft); border-radius:22px; overflow:hidden;
+    max-width:320px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    animation:lbPop .22s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes lbPop{ from{transform:scale(0.86);opacity:0;} to{transform:scale(1);opacity:1;} }
+  .lightbox-img-wrap{
+    width:100%; aspect-ratio:1; background:rgba(90,54,27,0.08);
+    display:flex; align-items:center; justify-content:center; font-size:64px;
+  }
+  .lightbox-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .lightbox-body{ padding:20px 22px 24px; text-align:center; }
+  .lightbox-title{ font-family:'Playfair Display',serif; font-weight:700; font-size:19px; color:var(--brown); }
+  .lightbox-sub{ font-size:12.5px; color:var(--brown-dim); margin-top:7px; font-weight:300; line-height:1.6; }
+  .lightbox-tags{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .lightbox-close-btn{
+    margin-top:18px; font-family:'Mitr',sans-serif; font-size:13px; color:#fff;
+    background:linear-gradient(90deg,var(--orange),#F0894A); border:none;
+    padding:9px 26px; border-radius:999px; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -177,6 +206,11 @@
   </div>
 </div>
 
+<div class="lightbox-overlay" id="lightbox">
+  <div class="lightbox-card" id="lightboxCard"></div>
+</div>
+
+
 <div class="status" id="statusMsg" style="display:none;"></div>
 <div class="foot">กาแฟแมวส้ม · Passport · build 2026-08-02-G (colored cup icons)</div>
 
@@ -207,6 +241,18 @@ function switchPage(page){
   document.getElementById('pageSummary').classList.toggle('active', page === 'summary');
 }
 
+function openLightbox(innerHtml){
+  document.getElementById('lightboxCard').innerHTML = innerHtml + '<div style="text-align:center;padding-bottom:22px;"><button class="lightbox-close-btn" id="lightboxCloseBtn">ปิด</button></div>';
+  document.getElementById('lightbox').classList.add('show');
+  document.getElementById('lightboxCloseBtn').addEventListener('click', closeLightbox);
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('show');
+}
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'lightbox') closeLightbox();
+});
+
 function renderHistory(rows, menuImageMap){
   const list = document.getElementById('historyList');
   list.innerHTML = '';
@@ -233,6 +279,19 @@ function renderHistory(rows, menuImageMap){
         ${tags.length ? `<div class="history-tags">${tags.join('')}</div>` : ''}
       </div>
     `;
+    item.addEventListener('click', () => {
+      const bigImg = imgUrl
+        ? `<div class="lightbox-img-wrap"><img src="${imgUrl}" alt=""></div>`
+        : `<div class="lightbox-img-wrap">☕</div>`;
+      openLightbox(`
+        ${bigImg}
+        <div class="lightbox-body">
+          <div class="lightbox-title">${r.menu_item_name}</div>
+          <div class="lightbox-sub">${fmtDate(r.order_created_at)}</div>
+          ${tags.length ? `<div class="lightbox-tags">${tags.join('')}</div>` : ''}
+        </div>
+      `);
+    });
     list.appendChild(item);
   });
 }
@@ -264,6 +323,25 @@ function renderMenuSection(unlockedNames, menuItems){
     cell.innerHTML = unlocked
       ? `<div class="medal-circle menu">${cupIconHTML(m.category)}</div><div class="cell-label">${m.name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">${m.name}</div>`;
+    cell.addEventListener('click', () => {
+      if (unlocked) {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="medal-circle menu" style="width:130px;margin:0 auto 16px;">${cupIconHTML(m.category)}</div>
+            <div class="lightbox-title">${m.name}</div>
+            <div class="lightbox-sub">✅ ปลดล็อกแล้ว — คุณเคยสั่งเมนูนี้</div>
+          </div>
+        `);
+      } else {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
+            <div class="lightbox-title">${m.name}</div>
+            <div class="lightbox-sub">ยังไม่ปลดล็อก — ลองสั่งเมนูนี้เพื่อสะสมเหรียญ!</div>
+          </div>
+        `);
+      }
+    });
     grid.appendChild(cell);
   });
   document.getElementById('menuCount').textContent = unlockedSet.size + '/' + menuItems.length;
@@ -283,6 +361,25 @@ function renderThemeSection(unlockedNames, themePeriods){
     cell.innerHTML = unlocked
       ? `<div class="medal-circle theme">🎮</div><div class="cell-label">${t.title}<br>${dateRange}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">${t.title}<br>${dateRange}</div>`;
+    cell.addEventListener('click', () => {
+      if (unlocked) {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="medal-circle theme" style="width:130px;font-size:52px;margin:0 auto 16px;">🎮</div>
+            <div class="lightbox-title">${t.title}</div>
+            <div class="lightbox-sub">${dateRange}<br>✅ ร่วมสนุกธีมนี้แล้ว</div>
+          </div>
+        `);
+      } else {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
+            <div class="lightbox-title">${t.title}</div>
+            <div class="lightbox-sub">${dateRange}<br>ยังไม่ปลดล็อก — ลองร่วมกิมมิกนี้ดูสิ</div>
+          </div>
+        `);
+      }
+    });
     grid.appendChild(cell);
   });
   document.getElementById('themeCount').textContent = unlockedSet.size + '/' + themePeriods.length;
@@ -301,6 +398,25 @@ function renderBeanSection(unlockedNames, beanUniverse){
     cell.innerHTML = unlocked
       ? `<div class="medal-circle bean">🌱</div><div class="cell-label">${name}</div>`
       : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
+    cell.addEventListener('click', () => {
+      if (unlocked) {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="medal-circle bean" style="width:130px;font-size:52px;margin:0 auto 16px;">🌱</div>
+            <div class="lightbox-title">${name}</div>
+            <div class="lightbox-sub">✅ เคยได้ลองเมล็ดนี้แล้ว</div>
+          </div>
+        `);
+      } else {
+        openLightbox(`
+          <div class="lightbox-body" style="padding-top:28px;">
+            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
+            <div class="lightbox-title">เมล็ดลับ</div>
+            <div class="lightbox-sub">ยังไม่ปลดล็อก — ลองเมนูที่ใช้เมล็ดนี้เพื่อไขปริศนา!</div>
+          </div>
+        `);
+      }
+    });
     grid.appendChild(cell);
   });
   document.getElementById('beanCount').textContent = unlockedSet.size + '/' + beanUniverse.length;
