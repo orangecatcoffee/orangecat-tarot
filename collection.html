@@ -253,7 +253,8 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
   if (e.target.id === 'lightbox') closeLightbox();
 });
 
-function renderHistory(rows, menuImageMap){
+function renderHistory(rows, menuImageMap, feedbackMap){
+  feedbackMap = feedbackMap || {};
   const list = document.getElementById('historyList');
   list.innerHTML = '';
   if (!rows.length){
@@ -262,6 +263,7 @@ function renderHistory(rows, menuImageMap){
   }
   rows.forEach(r => {
     const imgUrl = menuImageMap[r.menu_item_name];
+    const fb = r.source_preorder_id ? feedbackMap[r.source_preorder_id] : null;
     const item = document.createElement('div');
     item.className = 'history-item';
     const thumb = imgUrl
@@ -271,6 +273,7 @@ function renderHistory(rows, menuImageMap){
     if (r.channel === 'liff-tarot') tags.push('<span class="history-tag">🎴 ไพ่ทาโร่</span>');
     if (r.omakase_set_id) tags.push('<span class="history-tag" style="background:rgba(232,98,26,0.12);color:var(--orange,#E8621A);border-color:rgba(232,98,26,0.25);">✨ Omakase</span>');
     if (r.bean_name) tags.push(`<span class="history-tag bean">🌱 ${r.bean_name}</span>`);
+    if (fb) tags.push(`<span class="history-tag" style="background:rgba(201,164,74,0.15);color:#B8862E;border-color:rgba(201,164,74,0.3);">🐱 ${fb.rating}/5</span>`);
     item.innerHTML = `
       ${thumb}
       <div class="history-body">
@@ -283,12 +286,19 @@ function renderHistory(rows, menuImageMap){
       const bigImg = imgUrl
         ? `<div class="lightbox-img-wrap"><img src="${imgUrl}" alt=""></div>`
         : `<div class="lightbox-img-wrap">☕</div>`;
+      const fbBlock = fb
+        ? `<div style="margin-top:14px;background:rgba(201,164,74,0.1);border:1px solid rgba(201,164,74,0.25);border-radius:12px;padding:10px 14px;text-align:left;">
+             <div style="font-size:11px;color:#B8862E;font-weight:600;margin-bottom:4px;">🐱 ฟีดแบคที่คุณให้ไว้ — ${fb.rating}/5</div>
+             ${fb.comment ? `<div style="font-size:12px;color:var(--brown-dim,#8a6a4a);">"${fb.comment}"</div>` : ''}
+           </div>`
+        : '';
       openLightbox(`
         ${bigImg}
         <div class="lightbox-body">
           <div class="lightbox-title">${r.menu_item_name}</div>
           <div class="lightbox-sub">${fmtDate(r.order_created_at)}</div>
           ${tags.length ? `<div class="lightbox-tags">${tags.join('')}</div>` : ''}
+          ${fbBlock}
         </div>
       `);
     });
@@ -424,12 +434,13 @@ function renderBeanSection(unlockedNames, beanUniverse){
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, themeRes, beanUniverseRes, myCardsRes, historyRes] = await Promise.all([
+  const [menuRes, themeRes, beanUniverseRes, myCardsRes, historyRes, feedbackRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
     sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
     sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
-    sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
+    sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
+    sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
   ]);
 
   if (menuRes.error) throw menuRes.error;
@@ -437,6 +448,7 @@ async function loadAll(lineUserId){
   if (beanUniverseRes.error) throw beanUniverseRes.error;
   if (myCardsRes.error) throw myCardsRes.error;
   if (historyRes.error) throw historyRes.error;
+  if (feedbackRes.error) throw feedbackRes.error;
 
   const menuItems = menuRes.data || [];
   const menuImageMap = {};
@@ -450,7 +462,9 @@ async function loadAll(lineUserId){
   const myTheme = myCards.filter(c => c.theme === 'participation').map(c => c.card_name);
   const myBean = myCards.filter(c => c.theme === 'bean').map(c => c.card_name);
 
-  renderHistory(historyRes.data || [], menuImageMap);
+  const feedbackMap = {};
+  (feedbackRes.data || []).forEach(f => { feedbackMap[f.preorder_id] = f; });
+  renderHistory(historyRes.data || [], menuImageMap, feedbackMap);
   renderMenuSection(myMenu, menuItems);
   renderThemeSection(myTheme, themePeriods);
   renderBeanSection(myBean, beanUniverse);
