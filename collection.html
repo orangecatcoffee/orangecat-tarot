@@ -357,7 +357,7 @@ async function loadAll(lineUserId){
   const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
-      .eq('line_user_id', lineUserId).eq('order_type', 'customer').not('channel', 'like', 'liff-omakase%'),
+      .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
     sb.from('customer_reward_redemptions').select('redeemed_at').eq('line_user_id', lineUserId),
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
