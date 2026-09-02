@@ -170,7 +170,7 @@
 
 <div class="tabs">
   <button class="tab-btn active" id="tabHistory" data-page="history">📖 ประวัติเครื่องดื่ม</button>
-  <button class="tab-btn" id="tabSummary" data-page="summary">🏅 เหรียญสะสมของคุณ</button>
+  <button class="tab-btn" id="tabSummary" data-page="summary">🎁 แต้มสะสมของคุณ</button>
 </div>
 
 <div class="page active" id="pageHistory">
@@ -180,29 +180,20 @@
 <div class="page" id="pageSummary">
   <div class="section">
     <div class="section-head">
-      <span class="section-title">☕ เมนูที่ลองแล้ว</span>
-      <span class="section-count" id="menuCount">0/0</span>
+      <span class="section-title">🎁 สะสมครบ 10 แก้ว รับฟรี 1 แก้ว</span>
+      <span class="section-count" id="rewardCount">0/10</span>
     </div>
-    <div class="section-track"><div class="section-fill" id="menuFill"></div></div>
-    <div class="grid" id="menuGrid"></div>
+    <div class="section-track"><div class="section-fill" id="rewardFill"></div></div>
+    <div id="rewardStampGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 6px;"></div>
+    <div id="rewardReadyNote" style="display:none;text-align:center;font-size:12.5px;color:var(--orange);font-weight:600;margin-top:10px;">🎉 ครบแล้ว! รอรับเป็นเซอร์ไพรส์จากบาริสต้าครั้งหน้าได้เลย</div>
   </div>
 
   <div class="section">
     <div class="section-head">
-      <span class="section-title">🎮 Theme ที่ร่วมสนุก</span>
-      <span class="section-count" id="themeCount">0/0</span>
+      <span class="section-title">📜 เคยได้แก้วฟรีไปแล้ว</span>
+      <span class="section-count" id="redeemedCount">0 ครั้ง</span>
     </div>
-    <div class="section-track"><div class="section-fill" id="themeFill"></div></div>
-    <div class="grid" id="themeGrid"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">
-      <span class="section-title">🌱 เมล็ดที่ลองแล้ว</span>
-      <span class="section-count" id="beanCount">0/0</span>
-    </div>
-    <div class="section-track"><div class="section-fill" id="beanFill"></div></div>
-    <div class="grid" id="beanGrid"></div>
+    <div id="redeemedList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
   </div>
 </div>
 
@@ -321,132 +312,60 @@ function cupIconHTML(category){
   return `<div class="cup-icon"><div class="cup-lid"></div><div class="cup-body" style="background:${color}"></div></div>`;
 }
 
-function renderMenuSection(unlockedNames, menuItems){
-  const grid = document.getElementById('menuGrid');
-  grid.innerHTML = '';
-  const unlockedSet = new Set(unlockedNames);
-  const sorted = [...menuItems].sort((a, b) => (unlockedSet.has(b.name) ? 1 : 0) - (unlockedSet.has(a.name) ? 1 : 0));
-  sorted.forEach(m => {
-    const unlocked = unlockedSet.has(m.name);
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.innerHTML = unlocked
-      ? `<div class="medal-circle menu">${cupIconHTML(m.category)}</div><div class="cell-label">${m.name}</div>`
-      : `<div class="lock-mark">🔒</div><div class="cell-label locked">${m.name}</div>`;
-    cell.addEventListener('click', () => {
-      if (unlocked) {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="medal-circle menu" style="width:130px;margin:0 auto 16px;">${cupIconHTML(m.category)}</div>
-            <div class="lightbox-title">${m.name}</div>
-            <div class="lightbox-sub">✅ ปลดล็อกแล้ว — คุณเคยสั่งเมนูนี้</div>
-          </div>
-        `);
-      } else {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
-            <div class="lightbox-title">${m.name}</div>
-            <div class="lightbox-sub">ยังไม่ปลดล็อก — ลองสั่งเมนูนี้เพื่อสะสมเหรียญ!</div>
-          </div>
-        `);
-      }
-    });
-    grid.appendChild(cell);
-  });
-  document.getElementById('menuCount').textContent = unlockedSet.size + '/' + menuItems.length;
-  document.getElementById('menuFill').style.width = Math.round(unlockedSet.size / (menuItems.length || 1) * 100) + '%';
-}
+function renderRewardSection(totalCups, redemptions){
+  const redeemedCount = redemptions.length;
+  const progress = Math.max(0, totalCups - redeemedCount * 10);
+  const progressCapped = Math.min(progress, 10);
 
-function renderThemeSection(unlockedNames, themePeriods){
-  const grid = document.getElementById('themeGrid');
-  grid.innerHTML = '';
-  const unlockedSet = new Set(unlockedNames);
-  const sorted = [...themePeriods].sort((a, b) => (unlockedSet.has(b.theme_key) ? 1 : 0) - (unlockedSet.has(a.theme_key) ? 1 : 0));
-  sorted.forEach(t => {
-    const unlocked = unlockedSet.has(t.theme_key);
-    const dateRange = fmtDate(t.start_date) + ' – ' + (t.end_date ? fmtDate(t.end_date) : 'ปัจจุบัน');
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.innerHTML = unlocked
-      ? `<div class="medal-circle theme">🎮</div><div class="cell-label">${t.title}<br>${dateRange}</div>`
-      : `<div class="lock-mark">🔒</div><div class="cell-label locked">${t.title}<br>${dateRange}</div>`;
-    cell.addEventListener('click', () => {
-      if (unlocked) {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="medal-circle theme" style="width:130px;font-size:52px;margin:0 auto 16px;">🎮</div>
-            <div class="lightbox-title">${t.title}</div>
-            <div class="lightbox-sub">${dateRange}<br>✅ ร่วมสนุกธีมนี้แล้ว</div>
-          </div>
-        `);
-      } else {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
-            <div class="lightbox-title">${t.title}</div>
-            <div class="lightbox-sub">${dateRange}<br>ยังไม่ปลดล็อก — ลองร่วมกิมมิกนี้ดูสิ</div>
-          </div>
-        `);
-      }
-    });
-    grid.appendChild(cell);
-  });
-  document.getElementById('themeCount').textContent = unlockedSet.size + '/' + themePeriods.length;
-  document.getElementById('themeFill').style.width = Math.round(unlockedSet.size / (themePeriods.length || 1) * 100) + '%';
-}
+  document.getElementById('rewardCount').textContent = progressCapped + '/10';
+  document.getElementById('rewardFill').style.width = Math.round(progressCapped / 10 * 100) + '%';
 
-function renderBeanSection(unlockedNames, beanUniverse){
-  const grid = document.getElementById('beanGrid');
-  grid.innerHTML = '';
-  const unlockedSet = new Set(unlockedNames);
-  const sorted = [...beanUniverse].sort((a, b) => (unlockedSet.has(b) ? 1 : 0) - (unlockedSet.has(a) ? 1 : 0));
-  sorted.forEach(name => {
-    const unlocked = unlockedSet.has(name);
+  const stampGrid = document.getElementById('rewardStampGrid');
+  stampGrid.innerHTML = '';
+  for (let i = 1; i <= 10; i++){
+    const filled = i <= progressCapped;
     const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.innerHTML = unlocked
-      ? `<div class="medal-circle bean">🌱</div><div class="cell-label">${name}</div>`
-      : `<div class="lock-mark">🔒</div><div class="cell-label locked">?</div>`;
-    cell.addEventListener('click', () => {
-      if (unlocked) {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="medal-circle bean" style="width:130px;font-size:52px;margin:0 auto 16px;">🌱</div>
-            <div class="lightbox-title">${name}</div>
-            <div class="lightbox-sub">✅ เคยได้ลองเมล็ดนี้แล้ว</div>
-          </div>
-        `);
-      } else {
-        openLightbox(`
-          <div class="lightbox-body" style="padding-top:28px;">
-            <div class="lock-mark" style="width:130px;margin:0 auto 16px;">🔒</div>
-            <div class="lightbox-title">เมล็ดลับ</div>
-            <div class="lightbox-sub">ยังไม่ปลดล็อก — ลองเมนูที่ใช้เมล็ดนี้เพื่อไขปริศนา!</div>
-          </div>
-        `);
-      }
+    cell.style.cssText = 'aspect-ratio:1;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;'
+      + (filled
+          ? 'background:linear-gradient(145deg,var(--orange),#C9541A);box-shadow:0 3px 8px rgba(232,98,26,0.35);'
+          : 'background:rgba(90,54,27,0.06);border:1.5px dashed var(--brown-faint);');
+    cell.textContent = filled ? '☕' : '';
+    stampGrid.appendChild(cell);
+  }
+
+  document.getElementById('rewardReadyNote').style.display = progressCapped >= 10 ? 'block' : 'none';
+
+  document.getElementById('redeemedCount').textContent = redeemedCount + ' ครั้ง';
+  const listEl = document.getElementById('redeemedList');
+  listEl.innerHTML = '';
+  if (redeemedCount === 0){
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--brown-faint);text-align:center;padding:12px 0;">ยังไม่เคยได้แก้วฟรี — สะสมให้ครบ 10 แก้วแล้วรอเซอร์ไพรส์ได้เลย</div>';
+    return;
+  }
+  redemptions
+    .slice()
+    .sort((a, b) => new Date(b.redeemed_at) - new Date(a.redeemed_at))
+    .forEach(r => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.6);border-radius:12px;padding:10px 14px;';
+      row.innerHTML = `<span style="font-size:18px;">🎁</span><span style="font-size:12.5px;color:var(--brown);">ได้แก้วฟรี 1 แก้ว — ${fmtDate(r.redeemed_at)}</span>`;
+      listEl.appendChild(row);
     });
-    grid.appendChild(cell);
-  });
-  document.getElementById('beanCount').textContent = unlockedSet.size + '/' + beanUniverse.length;
-  document.getElementById('beanFill').style.width = Math.round(unlockedSet.size / (beanUniverse.length || 1) * 100) + '%';
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, themeRes, beanUniverseRes, myCardsRes, historyRes, feedbackRes] = await Promise.all([
+  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
-    sb.from('theme_periods').select('theme_key, title, start_date, end_date').order('start_date'),
-    sb.from('customer_card_collection').select('card_name').eq('theme', 'bean'),
-    sb.from('customer_card_collection').select('theme, card_name').eq('line_user_id', lineUserId),
+    sb.from('preorders').select('id', { count: 'exact', head: true })
+      .eq('line_user_id', lineUserId).eq('order_type', 'customer').not('channel', 'like', 'liff-omakase%'),
+    sb.from('customer_reward_redemptions').select('redeemed_at').eq('line_user_id', lineUserId),
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
   ]);
 
   if (menuRes.error) throw menuRes.error;
-  if (themeRes.error) throw themeRes.error;
-  if (beanUniverseRes.error) throw beanUniverseRes.error;
-  if (myCardsRes.error) throw myCardsRes.error;
+  if (cupsRes.error) throw cupsRes.error;
+  if (redemptionsRes.error) throw redemptionsRes.error;
   if (historyRes.error) throw historyRes.error;
   if (feedbackRes.error) throw feedbackRes.error;
 
@@ -454,20 +373,10 @@ async function loadAll(lineUserId){
   const menuImageMap = {};
   menuItems.forEach(m => menuImageMap[m.name] = m.image_url);
 
-  const themePeriods = themeRes.data || [];
-  const beanUniverse = [...new Set((beanUniverseRes.data || []).map(r => r.card_name))].sort();
-
-  const myCards = myCardsRes.data || [];
-  const myMenu = myCards.filter(c => c.theme === 'menu').map(c => c.card_name);
-  const myTheme = myCards.filter(c => c.theme === 'participation').map(c => c.card_name);
-  const myBean = myCards.filter(c => c.theme === 'bean').map(c => c.card_name);
-
   const feedbackMap = {};
   (feedbackRes.data || []).forEach(f => { feedbackMap[f.preorder_id] = f; });
   renderHistory(historyRes.data || [], menuImageMap, feedbackMap);
-  renderMenuSection(myMenu, menuItems);
-  renderThemeSection(myTheme, themePeriods);
-  renderBeanSection(myBean, beanUniverse);
+  renderRewardSection(cupsRes.count || 0, redemptionsRes.data || []);
 }
 
 async function init(){
