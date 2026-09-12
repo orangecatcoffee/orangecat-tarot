@@ -204,6 +204,7 @@
       <span class="section-title">📜 เคยได้แก้วฟรีไปแล้ว</span>
       <span class="section-count" id="redeemedCount">0 ครั้ง</span>
     </div>
+    <div id="rewardCapNote" style="font-size:10.5px;color:var(--brown-faint);margin:-6px 0 10px;"></div>
     <div id="redeemedList" style="display:flex;flex-direction:column;gap:14px;margin-top:10px;"></div>
   </div>
 
@@ -391,7 +392,7 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes] = await Promise.all([
+  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes, capAmountRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
       .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
@@ -399,6 +400,7 @@ async function loadAll(lineUserId){
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
     sb.from('system_settings').select('value').eq('key', 'passport.show_drink_history').maybeSingle(),
+    sb.from('system_settings').select('value').eq('key', 'crm.reward_cap_amount').maybeSingle(),
   ]);
 
   if (menuRes.error) throw menuRes.error;
@@ -409,6 +411,10 @@ async function loadAll(lineUserId){
 
   const showHistory = historyFlagRes.data ? historyFlagRes.data.value === true : true;
   document.getElementById('historySection').style.display = showHistory ? 'block' : 'none';
+
+  const capAmount = capAmountRes.data ? capAmountRes.data.value : 70;
+  document.getElementById('rewardCapNote').textContent =
+    `* มูลค่าแก้วฟรีไม่เกิน ${capAmount} บาท ถ้ามูลค่าที่เลือกรับสูงกว่านั้น ลูกค้าจ่ายส่วนต่าง`;
 
   const menuItems = menuRes.data || [];
   const menuImageMap = {};
