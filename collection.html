@@ -81,13 +81,12 @@
   .redeemed-mini img, .redeemed-mini .stamp-fallback{ width:100%;height:100%;object-fit:cover; }
   .redeemed-mini .watermark{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(15,10,5,0.55); overflow:hidden;
+    background:rgba(15,10,5,0.5);
   }
   .redeemed-mini .watermark span{
-    font-family:'Fredoka',sans-serif; font-weight:700; color:#fff;
-    font-size:10px; letter-spacing:0.5px; text-transform:uppercase;
-    transform:rotate(-45deg); white-space:nowrap;
-    text-shadow:0 1px 2px rgba(0,0,0,0.4);
+    font-size:22px; transform:rotate(-15deg);
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+    opacity:0.95;
   }
   .history-body{ padding:7px 8px 9px; }
   .history-name{ font-size:11.5px;font-weight:500;color:var(--brown);line-height:1.25; }
@@ -380,7 +379,7 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
       const miniCells = setCups.map(c => `
         <div class="redeemed-mini">
           ${stampCellHTML(c.menu_item_name, menuImageMap)}
-          <div class="watermark"><span>MAEWSOM</span></div>
+          <div class="watermark"><span>🐾</span></div>
         </div>
       `).join('');
       wrap.innerHTML = `
