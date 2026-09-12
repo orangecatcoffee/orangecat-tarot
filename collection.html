@@ -81,11 +81,11 @@
   .redeemed-mini img, .redeemed-mini .stamp-fallback{ width:100%;height:100%;object-fit:cover; }
   .redeemed-mini .watermark{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(15,10,5,0.5);
+    background:rgba(15,10,5,0.45);
   }
-  .redeemed-mini .watermark span{
-    font-size:22px; transform:rotate(-15deg);
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+  .redeemed-mini .watermark img{
+    width:70%; height:70%; object-fit:contain;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5)) brightness(1.15);
     opacity:0.95;
   }
   .history-body{ padding:7px 8px 9px; }
@@ -379,7 +379,7 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
       const miniCells = setCups.map(c => `
         <div class="redeemed-mini">
           ${stampCellHTML(c.menu_item_name, menuImageMap)}
-          <div class="watermark"><span>🐾</span></div>
+          <div class="watermark"><img src="https://raw.githubusercontent.com/orangecatcoffee/orangecat-tarot/main/watermark-cat.png" alt=""></div>
         </div>
       `).join('');
       wrap.innerHTML = `
