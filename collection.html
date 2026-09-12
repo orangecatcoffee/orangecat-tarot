@@ -418,6 +418,24 @@ async function init(){
     await loadAll('demo-user');
     return;
   }
+
+  // โหมดพรีวิวสำหรับ Fah เปิดดูแทนลูกค้าคนไหนก็ได้ ไม่ต้อง login LIFF จริง
+  // ใช้: collection.html?preview=<line_user_id>
+  const previewId = new URLSearchParams(location.search).get('preview');
+  if (previewId){
+    demoBanner.classList.add('show');
+    demoBanner.textContent = `🔍 โหมดพรีวิว — กำลังดูแทนลูกค้า (${previewId}) ไม่ใช่หน้าจอที่ลูกค้าคนนี้เห็นผ่าน LINE ของเขาเอง แต่ข้อมูลข้างในเป็นข้อมูลจริงทั้งหมด`;
+    try{
+      subline.textContent = 'พรีวิวของสะสม (แอดมิน)';
+      await loadAll(previewId);
+    }catch(e){
+      console.error(e);
+      statusMsg.style.display = 'block';
+      statusMsg.textContent = 'โหลดสมุดสะสมไม่สำเร็จ: ' + e.message;
+    }
+    return;
+  }
+
   try{
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()){ liff.login(); return; }
