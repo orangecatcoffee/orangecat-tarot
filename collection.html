@@ -68,6 +68,21 @@
   }
   .history-thumb{ width:100%;aspect-ratio:1;object-fit:cover;display:block;background:rgba(90,54,27,0.08); }
   .history-thumb.placeholder{ display:flex;align-items:center;justify-content:center;font-size:22px; }
+
+  .stamp-cell{ position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden; }
+  .stamp-cell.empty{ background:rgba(90,54,27,0.06);border:1.5px dashed var(--brown-faint); }
+  .stamp-cell img{ width:100%;height:100%;object-fit:cover;display:block; }
+  .stamp-cell .stamp-fallback{ width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(145deg,var(--orange),#C9541A); }
+
+  .redeemed-set{ background:rgba(255,255,255,0.55);border-radius:14px;padding:10px 12px; }
+  .redeemed-set-head{ display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--brown);margin-bottom:8px; }
+  .redeemed-mini-grid{ display:grid;grid-template-columns:repeat(5,1fr);gap:6px; }
+  .redeemed-mini{ position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden; }
+  .redeemed-mini img, .redeemed-mini .stamp-fallback{ width:100%;height:100%;object-fit:cover; }
+  .redeemed-mini .watermark{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(90,54,27,0.45);font-size:16px;
+  }
   .history-body{ padding:7px 8px 9px; }
   .history-name{ font-size:11.5px;font-weight:500;color:var(--brown);line-height:1.25; }
   .history-date{ font-size:9px;color:var(--brown-dim);margin-top:3px;font-weight:300; }
@@ -168,16 +183,7 @@
   <div class="sub" id="subline">ของสะสมที่คุณได้จากทุกกิมมิกของร้าน</div>
 </div>
 
-<div class="tabs">
-  <button class="tab-btn active" id="tabHistory" data-page="history">📖 ประวัติเครื่องดื่ม</button>
-  <button class="tab-btn" id="tabSummary" data-page="summary">🎁 แต้มสะสมของคุณ</button>
-</div>
-
-<div class="page active" id="pageHistory">
-  <div class="history-grid" id="historyList"></div>
-</div>
-
-<div class="page" id="pageSummary">
+<div class="page active" id="pageSummary">
   <div class="section">
     <div class="section-head">
       <span class="section-title">🎁 สะสมครบ 10 แก้ว รับฟรี 1 แก้ว</span>
@@ -185,7 +191,7 @@
     </div>
     <div class="section-track"><div class="section-fill" id="rewardFill"></div></div>
     <div id="rewardStampGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 6px;"></div>
-    <div id="rewardReadyNote" style="display:none;text-align:center;font-size:12.5px;color:var(--orange);font-weight:600;margin-top:10px;">🎉 ครบแล้ว! รอรับเป็นเซอร์ไพรส์จากบาริสต้าครั้งหน้าได้เลย</div>
+    <div id="rewardReadyNote" style="display:none;text-align:center;font-size:12.5px;color:var(--orange);font-weight:600;margin-top:10px;">🎉 ครบแล้ว! แจ้งบาริสต้าเพื่อรับแก้วฟรีได้เลย</div>
   </div>
 
   <div class="section">
@@ -193,7 +199,14 @@
       <span class="section-title">📜 เคยได้แก้วฟรีไปแล้ว</span>
       <span class="section-count" id="redeemedCount">0 ครั้ง</span>
     </div>
-    <div id="redeemedList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+    <div id="redeemedList" style="display:flex;flex-direction:column;gap:14px;margin-top:10px;"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">📖 ประวัติเครื่องดื่มทั้งหมด</span>
+    </div>
+    <div class="history-grid" id="historyList" style="margin-top:10px;"></div>
   </div>
 </div>
 
@@ -223,14 +236,7 @@ function fmtDate(iso){
   return d.getDate() + ' ' + THAI_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543);
 }
 
-document.getElementById('tabHistory').addEventListener('click', () => switchPage('history'));
-document.getElementById('tabSummary').addEventListener('click', () => switchPage('summary'));
-function switchPage(page){
-  document.getElementById('tabHistory').classList.toggle('active', page === 'history');
-  document.getElementById('tabSummary').classList.toggle('active', page === 'summary');
-  document.getElementById('pageHistory').classList.toggle('active', page === 'history');
-  document.getElementById('pageSummary').classList.toggle('active', page === 'summary');
-}
+// รวมเป็นหน้าเดียวแล้ว ไม่ต้องสลับแท็บอีกต่อไป
 
 function openLightbox(innerHtml){
   document.getElementById('lightboxCard').innerHTML = innerHtml + '<div style="text-align:center;padding-bottom:22px;"><button class="lightbox-close-btn" id="lightboxCloseBtn">ปิด</button></div>';
@@ -312,7 +318,14 @@ function cupIconHTML(category){
   return `<div class="cup-icon"><div class="cup-lid"></div><div class="cup-body" style="background:${color}"></div></div>`;
 }
 
-function renderRewardSection(totalCups, redemptions){
+function stampCellHTML(menuItemName, menuImageMap){
+  const imgUrl = menuItemName ? menuImageMap[menuItemName] : null;
+  return imgUrl
+    ? `<img src="${imgUrl}" alt="${menuItemName}">`
+    : `<div class="stamp-fallback">☕</div>`;
+}
+
+function renderRewardSection(totalCups, redemptions, historyAsc, menuImageMap){
   const redeemedCount = redemptions.length;
   const progress = Math.max(0, totalCups - redeemedCount * 10);
   const progressCapped = Math.min(progress, 10);
@@ -320,36 +333,55 @@ function renderRewardSection(totalCups, redemptions){
   document.getElementById('rewardCount').textContent = progressCapped + '/10';
   document.getElementById('rewardFill').style.width = Math.round(progressCapped / 10 * 100) + '%';
 
+  // แก้วที่อยู่ในรอบปัจจุบัน = แก้วล่าสุด progressCapped แก้ว (เรียงเก่า->ใหม่ ใส่ช่องซ้ายไปขวา)
+  const currentCycleCups = historyAsc.slice(historyAsc.length - progressCapped);
+
   const stampGrid = document.getElementById('rewardStampGrid');
   stampGrid.innerHTML = '';
   for (let i = 1; i <= 10; i++){
-    const filled = i <= progressCapped;
     const cell = document.createElement('div');
-    cell.style.cssText = 'aspect-ratio:1;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;'
-      + (filled
-          ? 'background:linear-gradient(145deg,var(--orange),#C9541A);box-shadow:0 3px 8px rgba(232,98,26,0.35);'
-          : 'background:rgba(90,54,27,0.06);border:1.5px dashed var(--brown-faint);');
-    cell.textContent = filled ? '☕' : '';
+    if (i <= progressCapped){
+      const cup = currentCycleCups[i - 1];
+      cell.className = 'stamp-cell';
+      cell.innerHTML = stampCellHTML(cup ? cup.menu_item_name : null, menuImageMap);
+    } else {
+      cell.className = 'stamp-cell empty';
+    }
     stampGrid.appendChild(cell);
   }
 
   document.getElementById('rewardReadyNote').style.display = progressCapped >= 10 ? 'block' : 'none';
-
   document.getElementById('redeemedCount').textContent = redeemedCount + ' ครั้ง';
+  renderRedeemedSets(redemptions, historyAsc, menuImageMap);
+}
+
+function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
   const listEl = document.getElementById('redeemedList');
   listEl.innerHTML = '';
-  if (redeemedCount === 0){
+  if (!redemptions.length){
     listEl.innerHTML = '<div style="font-size:12px;color:var(--brown-faint);text-align:center;padding:12px 0;">ยังไม่เคยได้แก้วฟรี — สะสมให้ครบ 10 แก้วแล้วรอเซอร์ไพรส์ได้เลย</div>';
     return;
   }
   redemptions
     .slice()
-    .sort((a, b) => new Date(b.redeemed_at) - new Date(a.redeemed_at))
-    .forEach(r => {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.6);border-radius:12px;padding:10px 14px;';
-      row.innerHTML = `<span style="font-size:18px;">🎁</span><span style="font-size:12.5px;color:var(--brown);">ได้แก้วฟรี 1 แก้ว — ${fmtDate(r.redeemed_at)}</span>`;
-      listEl.appendChild(row);
+    .sort((a, b) => new Date(a.redeemed_at) - new Date(b.redeemed_at)) // เรียงตามลำดับการแลกจริง เก่า->ใหม่
+    .forEach((r, idx) => {
+      // cups_at_redemption คือ "ความคืบหน้าต่อรอบ" (~10 ทุกครั้ง) ไม่ใช่ตำแหน่งสะสมรวม
+      // ต้องใช้ลำดับการแลก (idx) คูณ 10 หาตำแหน่งจริงในประวัติแทน ไม่ใช้ค่า cups_at_redemption ตรงๆ
+      const setCups = historyAsc.slice(idx * 10, idx * 10 + 10);
+      const wrap = document.createElement('div');
+      wrap.className = 'redeemed-set';
+      const miniCells = setCups.map(c => `
+        <div class="redeemed-mini">
+          ${stampCellHTML(c.menu_item_name, menuImageMap)}
+          <div class="watermark">🐱</div>
+        </div>
+      `).join('');
+      wrap.innerHTML = `
+        <div class="redeemed-set-head"><span>🎁</span><span>ได้แก้วฟรี 1 แก้ว — ${fmtDate(r.redeemed_at)}</span></div>
+        <div class="redeemed-mini-grid">${miniCells}</div>
+      `;
+      listEl.appendChild(wrap);
     });
 }
 
@@ -358,7 +390,7 @@ async function loadAll(lineUserId){
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
       .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
-    sb.from('customer_reward_redemptions').select('redeemed_at').eq('line_user_id', lineUserId),
+    sb.from('customer_reward_redemptions').select('redeemed_at, cups_at_redemption').eq('line_user_id', lineUserId),
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
   ]);
@@ -375,8 +407,10 @@ async function loadAll(lineUserId){
 
   const feedbackMap = {};
   (feedbackRes.data || []).forEach(f => { feedbackMap[f.preorder_id] = f; });
-  renderHistory(historyRes.data || [], menuImageMap, feedbackMap);
-  renderRewardSection(cupsRes.count || 0, redemptionsRes.data || []);
+  const historyDesc = historyRes.data || [];
+  const historyAsc = [...historyDesc].reverse(); // เก่า->ใหม่ ใช้จับตำแหน่งแก้วที่เท่าไหร่
+  renderHistory(historyDesc, menuImageMap, feedbackMap);
+  renderRewardSection(cupsRes.count || 0, redemptionsRes.data || [], historyAsc, menuImageMap);
 }
 
 async function init(){
