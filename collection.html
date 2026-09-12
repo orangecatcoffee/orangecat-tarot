@@ -202,7 +202,7 @@
     <div id="redeemedList" style="display:flex;flex-direction:column;gap:14px;margin-top:10px;"></div>
   </div>
 
-  <div class="section">
+  <div class="section" id="historySection">
     <div class="section-head">
       <span class="section-title">📖 ประวัติเครื่องดื่มทั้งหมด</span>
     </div>
@@ -386,13 +386,14 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes] = await Promise.all([
+  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
       .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
     sb.from('customer_reward_redemptions').select('redeemed_at, cups_at_redemption').eq('line_user_id', lineUserId),
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
+    sb.from('system_settings').select('value').eq('key', 'passport.show_drink_history').maybeSingle(),
   ]);
 
   if (menuRes.error) throw menuRes.error;
@@ -400,6 +401,9 @@ async function loadAll(lineUserId){
   if (redemptionsRes.error) throw redemptionsRes.error;
   if (historyRes.error) throw historyRes.error;
   if (feedbackRes.error) throw feedbackRes.error;
+
+  const showHistory = historyFlagRes.data ? historyFlagRes.data.value === true : true;
+  document.getElementById('historySection').style.display = showHistory ? 'block' : 'none';
 
   const menuItems = menuRes.data || [];
   const menuImageMap = {};
@@ -409,7 +413,7 @@ async function loadAll(lineUserId){
   (feedbackRes.data || []).forEach(f => { feedbackMap[f.preorder_id] = f; });
   const historyDesc = historyRes.data || [];
   const historyAsc = [...historyDesc].reverse(); // เก่า->ใหม่ ใช้จับตำแหน่งแก้วที่เท่าไหร่
-  renderHistory(historyDesc, menuImageMap, feedbackMap);
+  if (showHistory) renderHistory(historyDesc, menuImageMap, feedbackMap);
   renderRewardSection(cupsRes.count || 0, redemptionsRes.data || [], historyAsc, menuImageMap);
 }
 
