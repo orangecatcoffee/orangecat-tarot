@@ -199,6 +199,13 @@
     <div id="rewardReadyNote" style="display:none;text-align:center;font-size:12.5px;color:var(--orange);font-weight:600;margin-top:10px;">🎉 ครบแล้ว! แจ้งบาริสต้าเพื่อรับแก้วฟรีได้เลย</div>
   </div>
 
+  <div class="section" id="freeCupSection" style="display:none;">
+    <div class="section-head">
+      <span class="section-title">☕ แก้วฟรีที่ได้รับ</span>
+    </div>
+    <div id="freeCupList" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;"></div>
+  </div>
+
   <div class="section">
     <div class="section-head">
       <span class="section-title">📜 เคยได้แก้วฟรีไปแล้ว</span>
@@ -331,6 +338,45 @@ function stampCellHTML(menuItemName, menuImageMap){
     : `<div class="stamp-fallback">☕</div>`;
 }
 
+function renderFreeCups(redemptions, freeCups, menuImageMap){
+  const section = document.getElementById('freeCupSection');
+  const list = document.getElementById('freeCupList');
+  if (!redemptions.length || !freeCups.length){ section.style.display = 'none'; return; }
+
+  // จับคู่แต่ละการแลก กับแก้วฟรีจริง (order_type='reward') ที่เวลาใกล้กันที่สุด
+  const cupsWithTime = freeCups.map(c => ({
+    ...c,
+    ts: new Date(c.brewed_at || c.wanted_date).getTime(),
+  }));
+
+  const matched = redemptions.map(r => {
+    const redeemTs = new Date(r.redeemed_at).getTime();
+    let best = null, bestDiff = Infinity;
+    cupsWithTime.forEach(c => {
+      const diff = Math.abs(c.ts - redeemTs);
+      if (diff < bestDiff) { bestDiff = diff; best = c; }
+    });
+    return best ? { ...r, menu_item_name: best.menu_item_name } : null;
+  }).filter(Boolean);
+
+  if (!matched.length){ section.style.display = 'none'; return; }
+
+  section.style.display = 'block';
+  list.innerHTML = matched
+    .sort((a, b) => new Date(b.redeemed_at) - new Date(a.redeemed_at))
+    .map(m => {
+      const imgUrl = menuImageMap[m.menu_item_name];
+      const dateStr = fmtDate(m.redeemed_at);
+      return `<div style="text-align:center;">
+        <div style="aspect-ratio:1;border-radius:12px;overflow:hidden;background:rgba(90,54,27,0.08);">
+          ${imgUrl ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;">☕</div>`}
+        </div>
+        <div style="font-size:11px;color:var(--brown);font-weight:600;margin-top:4px;">${m.menu_item_name}</div>
+        <div style="font-size:9.5px;color:var(--brown-faint);">${dateStr}</div>
+      </div>`;
+    }).join('');
+}
+
 function renderRewardSection(totalCups, redemptions, historyAsc, menuImageMap){
   const redeemedCount = redemptions.length;
   const progress = Math.max(0, totalCups - redeemedCount * 10);
@@ -392,7 +438,7 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes, capAmountRes] = await Promise.all([
+  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes, capAmountRes, freeCupsRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
       .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
@@ -401,6 +447,7 @@ async function loadAll(lineUserId){
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
     sb.from('system_settings').select('value').eq('key', 'passport.show_drink_history').maybeSingle(),
     sb.from('system_settings').select('value').eq('key', 'crm.reward_cap_amount').maybeSingle(),
+    sb.from('preorders').select('menu_item_name, wanted_date, brewed_at').eq('line_user_id', lineUserId).eq('order_type', 'reward'),
   ]);
 
   if (menuRes.error) throw menuRes.error;
@@ -425,6 +472,7 @@ async function loadAll(lineUserId){
   const historyDesc = historyRes.data || [];
   const historyAsc = [...historyDesc].reverse(); // เก่า->ใหม่ ใช้จับตำแหน่งแก้วที่เท่าไหร่
   if (showHistory) renderHistory(historyDesc, menuImageMap, feedbackMap);
+  renderFreeCups(redemptionsRes.data || [], freeCupsRes.data || [], menuImageMap);
   renderRewardSection(cupsRes.count || 0, redemptionsRes.data || [], historyAsc, menuImageMap);
 }
 
