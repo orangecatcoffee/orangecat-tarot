@@ -438,10 +438,11 @@ function renderRedeemedSets(redemptions, historyAsc, menuImageMap){
 }
 
 async function loadAll(lineUserId){
-  const [menuRes, cupsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes, capAmountRes, freeCupsRes] = await Promise.all([
+  const [menuRes, cupsRes, customerIdsRes, redemptionsRes, historyRes, feedbackRes, historyFlagRes, capAmountRes, freeCupsRes] = await Promise.all([
     sb.from('menu_items').select('name, image_url, category').order('name'),
     sb.from('preorders').select('id', { count: 'exact', head: true })
       .eq('line_user_id', lineUserId).eq('order_type', 'customer'),
+    sb.from('preorders').select('id').eq('line_user_id', lineUserId).eq('order_type', 'customer'),
     sb.from('customer_reward_redemptions').select('redeemed_at, cups_at_redemption').eq('line_user_id', lineUserId),
     sb.from('order_log').select('menu_item_name, order_created_at, channel, bean_name, omakase_set_id, source_preorder_id').eq('line_user_id', lineUserId).order('order_created_at', { ascending: false }),
     sb.from('feedback_requests').select('preorder_id, rating, comment').eq('line_user_id', lineUserId).not('rating', 'is', null),
@@ -470,10 +471,16 @@ async function loadAll(lineUserId){
   const feedbackMap = {};
   (feedbackRes.data || []).forEach(f => { feedbackMap[f.preorder_id] = f; });
   const historyDesc = historyRes.data || [];
-  const historyAsc = [...historyDesc].reverse(); // เก่า->ใหม่ ใช้จับตำแหน่งแก้วที่เท่าไหร่
+  const historyAsc = [...historyDesc].reverse(); // เก่า->ใหม่ ใช้จับตำแหน่งแก้วที่เท่าไหร่ (สำหรับ "ประวัติทั้งหมด" — ไม่กรอง แสดงทุกประเภท)
+
+  // กรอบสะสม/ชุดที่แลกไปแล้ว ต้องใช้เฉพาะแก้วที่นับจริง (order_type='customer') เท่านั้น
+  // เจอบั๊ก: แก้วรางวัล (reward) หลุดเข้ามาโชว์ในกรอบสะสมทั้งที่ตัวเลขไม่ได้นับมัน — order_log ไม่มี order_type ต้อง join เอง
+  const customerIdSet = new Set((customerIdsRes.data || []).map(r => r.id));
+  const progressHistoryAsc = historyAsc.filter(h => h.source_preorder_id && customerIdSet.has(h.source_preorder_id));
+
   if (showHistory) renderHistory(historyDesc, menuImageMap, feedbackMap);
   renderFreeCups(redemptionsRes.data || [], freeCupsRes.data || [], menuImageMap);
-  renderRewardSection(cupsRes.count || 0, redemptionsRes.data || [], historyAsc, menuImageMap);
+  renderRewardSection(cupsRes.count || 0, redemptionsRes.data || [], progressHistoryAsc, menuImageMap);
 }
 
 async function init(){
